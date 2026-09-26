@@ -1,0 +1,77 @@
+<aside
+  class="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col overflow-y-auto bg-brand-950 px-3.5 pt-5 pb-4 text-[#e9dff5] transition-transform duration-200 motion-reduce:transition-none lg:sticky lg:top-0 lg:h-screen lg:w-auto lg:translate-x-0"
+  [class.-translate-x-full]="!open()"
+  aria-label="Navigation principale"
+>
+  <div class="flex items-center gap-2.5 px-2 pb-[22px]">
+    <span class="grid size-[34px] place-items-center rounded-[10px] bg-brand-600" aria-hidden="true">
+      <svg viewBox="0 0 32 32" class="size-[22px]">
+        <path d="M8 22V10l8 8 8-8v12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </span>
+    <span class="flex-1 font-display text-[1.05rem] font-bold text-white">AccountPro</span>
+    <button type="button" class="text-xl text-white lg:hidden" (click)="closed.emit()" aria-label="Fermer le menu">
+      <app-icon name="close" />
+    </button>
+  </div>
+
+  <nav class="flex-1" aria-label="Menu principal">
+    <a
+      href="#"
+      class="flex items-center gap-3 rounded-lg bg-brand-600 px-2.5 py-2.5 font-semibold text-white no-underline focus-visible:outline-white"
+      aria-current="page"
+      (click)="$event.preventDefault()"
+    >
+      <app-icon name="dashboard" /> Dashboard
+    </a>
+
+    <ul class="mt-3 grid gap-0.5">
+      @for (g of groups; track g.id) {
+        <li>
+          <button
+            type="button"
+            class="flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left text-[0.9rem] font-medium transition-colors hover:bg-white/10 focus-visible:outline-white"
+            [class.bg-white/10]="expanded() === g.id"
+            [attr.aria-expanded]="expanded() === g.id"
+            [attr.aria-controls]="'sub-' + g.id"
+            (click)="toggle(g.id)"
+          >
+            <app-icon [name]="g.icon" />
+            <span class="flex-1">{{ g.label }}</span>
+            <app-icon class="text-[0.9em] transition-transform" [class.rotate-180]="expanded() === g.id" name="chevron" />
+          </button>
+
+          @if (expanded() === g.id) {
+            <ul [id]="'sub-' + g.id" class="mt-0.5 mb-1.5 ml-[22px] border-l border-white/15 pl-2">
+              @for (item of g.items; track item) {
+                <li>
+                  <a
+                    href="#"
+                    class="block rounded-md px-2.5 py-1.5 text-sm text-brand-200 no-underline hover:bg-white/10 hover:text-white focus-visible:outline-white"
+                    (click)="$event.preventDefault()"
+                  >
+                    {{ item }}
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <a
+    href="#"
+    class="mt-3 flex items-center gap-2.5 rounded-lg border-t border-white/10 px-2.5 pt-3.5 no-underline hover:bg-white/5 focus-visible:outline-white"
+    (click)="$event.preventDefault()"
+  >
+    <span class="grid size-[34px] place-items-center rounded-full bg-brand-200 text-sm font-bold text-brand-900" aria-hidden="true">
+      {{ store.user().initials }}
+    </span>
+    <span class="flex flex-col leading-tight">
+      <strong class="text-[0.9rem] font-semibold text-white">Mon compte</strong>
+      <small class="text-[0.8125rem] text-brand-300">{{ store.user().name }}</small>
+    </span>
+  </a>
+</aside>

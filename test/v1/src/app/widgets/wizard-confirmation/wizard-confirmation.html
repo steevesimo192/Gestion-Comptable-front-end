@@ -1,0 +1,59 @@
+<div class="grid gap-6">
+  <div class="flex items-start gap-3 rounded-lg border border-ok/30 bg-ok-bg px-4 py-4" role="status">
+    <span class="grid size-9 flex-none place-items-center rounded-full bg-ok text-white">
+      <app-icon name="check" />
+    </span>
+    <div>
+      <p class="font-semibold text-ok">Dossier créé — Exercice {{ store.exerciceYear() }} ouvert</p>
+      <p class="mt-0.5 text-sm text-ink-2">
+        Le plan de comptes {{ store.selectedReferentiel()?.label }} a été généré automatiquement pour ce dossier.
+      </p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 class="panel-title mb-4">Récapitulatif</h3>
+    <dl class="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+      <div>
+        <dt class="text-muted">Entreprise</dt>
+        <dd class="mt-0.5 font-semibold">{{ store.selectedCompany()?.name }}</dd>
+      </div>
+      <div>
+        <dt class="text-muted">Dossier</dt>
+        <dd class="mt-0.5 font-semibold">
+          {{ store.form.controls.informations.controls.code.value }} —
+          {{ store.form.controls.informations.controls.libelle.value }}
+        </dd>
+      </div>
+      <div>
+        <dt class="text-muted">Référentiel comptable</dt>
+        <dd class="mt-0.5 font-semibold">{{ store.selectedReferentiel()?.label }}</dd>
+      </div>
+      <div>
+        <dt class="text-muted">Devise fonctionnelle</dt>
+        <dd class="mt-0.5 font-semibold">{{ store.selectedDeviseFonctionnelle()?.label }}</dd>
+      </div>
+      <div>
+        <dt class="text-muted">Devises secondaires</dt>
+        <dd class="mt-0.5 font-semibold">
+          @if (store.secondaryCurrencies().length > 0) {
+            {{ store.secondaryCurrencies().length }} activée{{ store.secondaryCurrencies().length > 1 ? 's' : '' }}
+          } @else {
+            Aucune
+          }
+        </dd>
+      </div>
+      <div>
+        <dt class="text-muted">Premier exercice</dt>
+        <dd class="mt-0.5 font-semibold">
+          Du {{ store.form.controls.exercice.controls.debut.value }} au {{ store.form.controls.exercice.controls.fin.value }}
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="flex flex-wrap gap-3">
+    <button type="button" class="btn btn-primary" (click)="accessDossier.emit()">Accéder au dossier</button>
+    <button type="button" class="btn btn-quiet" (click)="createAnother.emit()">Créer un autre dossier</button>
+  </div>
+</div>

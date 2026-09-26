@@ -1,0 +1,71 @@
+<div class="mx-auto max-w-3xl">
+  <a routerLink="/" class="btn btn-link mb-3 inline-flex items-center gap-1.5 px-0">
+    <app-icon name="arrow-right" class="rotate-180 text-[0.9em]" /> Retour au tableau de bord
+  </a>
+
+  <header class="mb-6">
+    <h1 class="text-2xl">Nouveau dossier comptable</h1>
+    @if (!store.submitted()) {
+      <p class="mt-1 text-ink-2">Étape {{ store.currentStep() }} sur {{ store.steps.length }} — {{ currentLabel() }}</p>
+    } @else {
+      <p class="mt-1 text-ink-2">Le dossier est prêt à recevoir ses premières écritures.</p>
+    }
+  </header>
+
+  @if (store.hasDraft() && !store.submitted()) {
+    <div class="panel mb-6 flex flex-wrap items-center justify-between gap-3 border-brand-200 bg-brand-50">
+      <p class="text-sm text-brand-800">
+        <strong class="font-semibold">Brouillon trouvé.</strong> Une configuration inachevée avait été conservée. Voulez-vous la reprendre ?
+      </p>
+      <div class="flex flex-none gap-2">
+        <button type="button" class="btn btn-quiet" (click)="discardDraft()">Repartir de zéro</button>
+        <button type="button" class="btn btn-primary" (click)="useDraft()">Reprendre le brouillon</button>
+      </div>
+    </div>
+  }
+
+  @if (!store.submitted()) {
+    <app-wizard-progress
+      class="mb-8 block"
+      [steps]="store.steps"
+      [current]="store.currentStep()"
+      [furthest]="store.furthestStep()"
+      (stepClick)="goToStep($event)"
+    />
+
+    <div class="panel">
+      @switch (store.currentStep()) {
+        @case (1) {
+          <app-wizard-step-info />
+        }
+        @case (2) {
+          <app-wizard-step-referentiel />
+        }
+        @case (3) {
+          <app-wizard-step-devises />
+        }
+        @case (4) {
+          <app-wizard-step-exercice />
+        }
+      }
+
+      <div class="mt-8 flex items-center justify-between border-t border-line pt-5">
+        <button type="button" class="btn btn-quiet" [class.invisible]="store.currentStep() === 1" (click)="back()">
+          <app-icon name="arrow-right" class="rotate-180" /> Précédent
+        </button>
+
+        <div class="flex items-center gap-3">
+          @if (store.currentStep() === 3) {
+            <button type="button" class="btn btn-link" (click)="skip()">Passer cette étape</button>
+          }
+          <button type="button" class="btn btn-primary" (click)="next()">
+            {{ store.currentStep() === store.steps.length ? 'Créer le dossier' : 'Suivant' }}
+            <app-icon name="arrow-right" />
+          </button>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <app-wizard-confirmation (accessDossier)="goToDashboard()" (createAnother)="createAnother()" />
+  }
+</div>

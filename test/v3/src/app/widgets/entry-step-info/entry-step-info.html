@@ -1,0 +1,96 @@
+<form [formGroup]="group" class="grid gap-6" (ngSubmit)="$event.preventDefault()">
+  <div>
+    <h2 class="panel-title mb-1">Informations générales</h2>
+    <p class="panel-sub">Ces informations s'appliquent à toute l'écriture, avant le détail des lignes.</p>
+  </div>
+
+  <div class="grid gap-6 sm:grid-cols-2">
+    <div>
+      <label class="mb-1.5 block text-sm font-semibold" for="journal">Journal <span class="text-bad">*</span></label>
+      <select
+        id="journal"
+        formControlName="journalId"
+        class="w-full rounded-lg border bg-white px-3 py-2.5"
+        [class]="group.controls.journalId.invalid && group.controls.journalId.touched ? 'border-bad' : 'border-line focus:border-brand-600'"
+      >
+        <option value="" disabled>Choisir un journal</option>
+        @for (j of store.journals; track j.id) {
+          <option [value]="j.id">{{ j.label }}</option>
+        }
+      </select>
+      @if (group.controls.journalId.invalid && group.controls.journalId.touched) {
+        <p class="mt-1.5 text-sm text-bad">Choisissez le journal de cette écriture.</p>
+      }
+    </div>
+
+    <div>
+      <label class="mb-1.5 block text-sm font-semibold" for="date-comptable">Date comptable <span class="text-bad">*</span></label>
+      <input
+        id="date-comptable"
+        type="date"
+        formControlName="date"
+        class="w-full rounded-lg border bg-white px-3 py-2.5"
+        [class]="(group.controls.date.invalid && group.controls.date.touched) || store.periodLocked() ? 'border-bad' : 'border-line focus:border-brand-600'"
+      />
+      @if (group.controls.date.invalid && group.controls.date.touched) {
+        <p class="mt-1.5 text-sm text-bad">Indiquez la date comptable de l'opération.</p>
+      } @else {
+        <p class="mt-1.5 text-sm text-muted">Doit tomber dans une période ouverte du dossier.</p>
+      }
+    </div>
+  </div>
+
+  @if (store.periodLocked()) {
+    <div class="flex items-start gap-3 rounded-lg border border-bad/30 bg-bad-bg px-4 py-3.5">
+      <app-icon name="lock" class="mt-0.5 flex-none text-bad" />
+      <div class="text-sm text-bad">
+        <p class="font-semibold">Période verrouillée</p>
+        <p class="mt-0.5">
+          La période comptable correspondant à cette date a déjà été clôturée. Choisissez une autre date comptable
+          pour continuer.
+        </p>
+        <button type="button" class="btn btn-quiet mt-2.5 border-bad/40 bg-white text-bad hover:bg-bad-bg" (click)="focusDate()">
+          Choisir une autre date
+        </button>
+      </div>
+    </div>
+  }
+
+  <div>
+    <span class="mb-1.5 block text-sm font-semibold">Pièce jointe</span>
+
+    <!-- Input file présent en permanence dans le DOM mais masqué, ce qui résout l'erreur TypeScript -->
+    <input #fileInput type="file" class="hidden" (change)="onFileChange($event)" />
+
+    @if (group.controls.piece.value) {
+      <div class="flex items-center gap-2.5 rounded-lg border border-line bg-white px-3 py-2.5">
+        <app-icon name="file" class="flex-none text-muted" />
+        <span class="min-w-0 flex-1 truncate text-sm">{{ group.controls.piece.value }}</span>
+        <button type="button" class="btn btn-link px-0 py-0 text-sm text-bad hover:underline" (click)="clearFile(fileInput)">Retirer</button>
+      </div>
+    } @else {
+      <label
+        class="flex cursor-pointer items-center gap-2.5 rounded-lg border border-dashed border-line bg-white px-3 py-2.5 text-muted hover:border-brand-300"
+        (click)="fileInput.click()"
+      >
+        <app-icon name="file" class="flex-none" />
+        <span class="text-sm">Joindre une facture, un reçu ou un justificatif (facultatif)</span>
+      </label>
+    }
+  </div>
+
+  <div>
+    <label class="mb-1.5 block text-sm font-semibold" for="libelle-ecriture">Libellé <span class="text-bad">*</span></label>
+    <input
+      id="libelle-ecriture"
+      type="text"
+      formControlName="libelle"
+      placeholder="Ex. Facture fournisseur X — septembre 2026"
+      class="w-full rounded-lg border bg-white px-3 py-2.5"
+      [class]="group.controls.libelle.invalid && group.controls.libelle.touched ? 'border-bad' : 'border-line focus:border-brand-600'"
+    />
+    @if (group.controls.libelle.invalid && group.controls.libelle.touched) {
+      <p class="mt-1.5 text-sm text-bad">Décrivez brièvement l'opération.</p>
+    }
+  </div>
+</form>

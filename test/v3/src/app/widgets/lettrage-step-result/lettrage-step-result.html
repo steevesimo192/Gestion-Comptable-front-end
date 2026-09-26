@@ -1,0 +1,126 @@
+<div class="grid gap-6">
+  @if (record(); as r) {
+    @if (r.annule) {
+      <div class="flex items-start gap-3 rounded-lg border border-line bg-white px-4 py-4" role="status">
+        <span class="grid size-9 flex-none place-items-center rounded-full bg-brand-600 text-white">
+          <app-icon name="file" />
+        </span>
+        <div>
+          <p class="font-semibold text-brand-900">Lettrage {{ r.code }} annulé</p>
+          <p class="mt-0.5 text-sm text-ink-2">
+            Les lignes concernées sont redevenues non lettrées. Cette annulation a été enregistrée dans l'historique des
+            modifications.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-2">
+        <button type="button" class="btn btn-primary" (click)="another.emit()">Lettrer à nouveau</button>
+        <button type="button" class="btn btn-quiet" (click)="changeTiers.emit()">Changer de tiers</button>
+        <button type="button" class="btn btn-link" (click)="goDashboard.emit()">Retour au tableau de bord</button>
+      </div>
+    } @else {
+      @if (r.statut === 'total') {
+        <div class="flex items-start gap-3 rounded-lg border border-ok/30 bg-ok-bg px-4 py-4" role="status">
+          <span class="grid size-9 flex-none place-items-center rounded-full bg-ok text-white">
+            <app-icon name="check" />
+          </span>
+          <div>
+            <p class="font-semibold text-ok">Lettrage effectué avec succès</p>
+            <p class="mt-0.5 text-sm text-ink-2">
+              Les lignes sélectionnées sont soldées et le compte du tiers a été mis à jour.
+            </p>
+          </div>
+        </div>
+      } @else {
+        <div class="flex items-start gap-3 rounded-lg border border-warn-mark/40 bg-warn-bg px-4 py-4" role="status">
+          <span class="grid size-9 flex-none place-items-center rounded-full bg-warn-mark/30 text-warn">
+            <app-icon name="check" />
+          </span>
+          <div>
+            <p class="font-semibold text-warn">Lettrage partiel effectué</p>
+            <p class="mt-0.5 text-sm text-ink-2">
+              {{ r.reste | fcfa }} restent non lettrés sur ce tiers et pourront l'être plus tard.
+            </p>
+          </div>
+        </div>
+      }
+
+      <div class="panel">
+        <h3 class="panel-title mb-4">Récapitulatif du lettrage</h3>
+        <dl class="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+          <div>
+            <dt class="text-muted">Tiers</dt>
+            <dd class="mt-0.5 font-semibold">{{ store.selectedTiers()?.name }}</dd>
+          </div>
+          <div>
+            <dt class="text-muted">Code de lettrage</dt>
+            <dd class="mt-0.5 font-semibold">{{ r.code }}</dd>
+          </div>
+          <div>
+            <dt class="text-muted">Montant lettré</dt>
+            <dd class="mt-0.5 font-semibold">{{ r.montant | fcfa }}</dd>
+          </div>
+          <div>
+            <dt class="text-muted">Reste non lettré</dt>
+            <dd class="mt-0.5 font-semibold" [class.text-warn]="r.reste > 0">{{ r.reste | fcfa }}</dd>
+          </div>
+          <div>
+            <dt class="text-muted">Date du lettrage</dt>
+            <dd class="mt-0.5 font-semibold">{{ formatDate(r.date) }}</dd>
+          </div>
+          <div>
+            <dt class="text-muted">Type</dt>
+            <dd class="mt-0.5">
+              @if (r.statut === 'total') {
+                <span class="badge badge-ok">Total</span>
+              } @else {
+                <span class="badge badge-draft">Partiel</span>
+              }
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="panel border-brand-200 bg-brand-50">
+        <h3 class="panel-title mb-2 text-brand-900">Situation du tiers</h3>
+        <p class="flex items-center justify-between gap-3 text-sm">
+          <span class="text-brand-900">{{ position().label }}</span>
+          @if (position().amount > 0) {
+            <span class="font-semibold text-warn">{{ position().amount | fcfa }}</span>
+          }
+        </p>
+      </div>
+
+      @if (store.cancelPending()) {
+        <section class="rounded-xl border border-bad/30 bg-bad-bg px-4 py-4" aria-labelledby="cancel-title">
+          <p id="cancel-title" class="font-semibold text-bad">Annuler le lettrage {{ r.code }} ?</p>
+          <p class="mt-1 text-sm text-ink-2">
+            Les lignes concernées redeviendront non lettrées. Cette action est enregistrée dans l'historique des
+            modifications.
+          </p>
+          <div class="mt-3 flex flex-wrap gap-3">
+            <button type="button" class="btn btn-quiet" (click)="store.abortCancel()">Garder le lettrage</button>
+            <button type="button" class="btn bg-bad text-white hover:opacity-90" (click)="store.confirmCancel()">
+              Annuler le lettrage
+            </button>
+          </div>
+        </section>
+      }
+
+      <div class="grid gap-3 sm:grid-cols-2">
+        <button type="button" class="btn btn-primary" (click)="another.emit()">Lettrer un autre règlement</button>
+        <button type="button" class="btn btn-quiet" (click)="changeTiers.emit()">Changer de tiers</button>
+        <button
+          type="button"
+          class="btn btn-quiet disabled:cursor-not-allowed disabled:opacity-40"
+          [disabled]="store.cancelPending()"
+          (click)="store.requestCancel()"
+        >
+          Annuler ce lettrage
+        </button>
+        <button type="button" class="btn btn-link" (click)="goDashboard.emit()">Retour au tableau de bord</button>
+      </div>
+    }
+  }
+</div>

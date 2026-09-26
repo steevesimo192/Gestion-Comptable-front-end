@@ -1,0 +1,28 @@
+<article class="panel flex h-full flex-col gap-4" [attr.aria-label]="kpi().label">
+  <div class="flex items-start justify-between gap-3">
+    <span class="grid size-11 place-items-center rounded-xl text-xl" [class]="tone()">
+      <app-icon [name]="kpi().icon" />
+    </span>
+    <span
+      class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.8125rem] font-semibold"
+      [class.bg-ok-bg]="kpi().good"
+      [class.text-ok]="kpi().good"
+      [class.bg-warn-bg]="!kpi().good"
+      [class.text-warn]="!kpi().good"
+    >
+      <app-icon class="text-[0.85em]" [name]="up() ? 'arrow-up' : 'arrow-down'" />
+      {{ deltaText() }}
+      <span class="sr-only">par rapport au mois dernier</span>
+    </span>
+  </div>
+
+  <div>
+    <p class="text-sm font-medium text-ink-2">{{ kpi().label }}</p>
+    <p class="mt-1 font-display text-[length:clamp(1.5rem,2vw,1.9rem)] leading-none font-bold tracking-tight whitespace-nowrap">
+      {{ kpi().value | fcfa: 'plain' }}
+      <span class="text-[0.9rem] font-semibold text-muted">FCFA</span>
+    </p>
+  </div>
+
+  <p class="mt-auto border-t border-line pt-3 text-[0.8125rem] text-muted">{{ kpi().hint }}</p>
+</article>

@@ -1,0 +1,111 @@
+<div class="mx-auto max-w-5xl">
+  <a routerLink="/" class="btn btn-link mb-3 inline-flex items-center gap-1.5 px-0">
+    <app-icon name="arrow-right" class="rotate-180 text-[0.9em]" /> Retour au tableau de bord
+  </a>
+
+  <header class="mb-6">
+    <p class="mb-1 text-sm text-muted">Trésorerie &amp; banque › Rapprochement bancaire</p>
+    <h1 class="text-2xl">Rapprochement bancaire</h1>
+    @if (store.currentStep() === 6) {
+      <p class="mt-1 text-ink-2">Opération terminée.</p>
+    } @else {
+      <p class="mt-1 text-ink-2">
+        Étape {{ store.currentStep() }} sur {{ store.steps.length }} : {{ currentLabel() }}
+        @if (store.currentStep() > 1 && store.label()) {
+          · {{ store.label() }}
+        }
+      </p>
+    }
+  </header>
+
+  <app-wizard-progress
+    class="mb-8 block"
+    listLabel="Étapes du rapprochement bancaire"
+    [steps]="store.steps"
+    [current]="progressCurrent()"
+    [furthest]="progressFurthest()"
+    (stepClick)="goToStep($event)"
+  />
+
+  @switch (store.currentStep()) {
+    @case (1) {
+      <div class="panel">
+        <app-bank-step-import />
+
+        <div class="action-bar">
+          <button type="button" class="btn btn-quiet w-full sm:w-auto" (click)="goToDashboard()">Annuler</button>
+          <button type="button" class="btn btn-primary w-full sm:w-auto" (click)="importStatement()">
+            Importer le relevé <app-icon name="arrow-right" />
+          </button>
+        </div>
+      </div>
+    }
+    @case (2) {
+      <div class="panel">
+        <app-bank-step-suggestions />
+
+        <div class="action-bar">
+          <button type="button" class="btn btn-quiet w-full sm:w-auto" (click)="goToStep(1)">
+            <app-icon name="arrow-right" class="rotate-180" /> Changer de relevé
+          </button>
+          <button type="button" class="btn btn-primary w-full sm:w-auto" (click)="toManual()">
+            Rapprochement manuel <app-icon name="arrow-right" />
+          </button>
+        </div>
+      </div>
+    }
+    @case (3) {
+      <div class="panel">
+        <app-bank-step-manual />
+
+        <div class="action-bar">
+          <button type="button" class="btn btn-quiet w-full sm:w-auto" (click)="goToStep(2)">
+            <app-icon name="arrow-right" class="rotate-180" /> Suggestions
+          </button>
+          <div class="action-group">
+            @if (store.progress().remaining > 0) {
+              <p class="text-center text-sm text-muted sm:text-right">
+                Encore {{ store.progress().remaining }} opération{{ store.progress().remaining > 1 ? 's' : '' }} à traiter
+              </p>
+            }
+            <button
+              type="button"
+              class="btn btn-primary w-full sm:w-auto"
+              [disabled]="store.progress().remaining > 0"
+              (click)="toRecap()"
+            >
+              Voir le récapitulatif <app-icon name="arrow-right" />
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+    @case (4) {
+      <div class="panel">
+        <app-bank-step-recap />
+
+        <div class="action-bar">
+          <button type="button" class="btn btn-quiet w-full sm:w-auto" (click)="goToStep(3)">
+            <app-icon name="arrow-right" class="rotate-180" /> Retour au rapprochement
+          </button>
+          <button
+            type="button"
+            class="btn btn-success w-full sm:w-auto"
+            [disabled]="store.progress().remaining > 0"
+            (click)="requestClose()"
+          >
+            <app-icon name="lock" /> Clôturer le rapprochement
+          </button>
+        </div>
+      </div>
+    }
+    @case (5) {
+      <div class="panel">
+        <app-bank-step-close (cancelled)="cancelClose()" (confirmed)="confirmClose()" />
+      </div>
+    }
+    @case (6) {
+      <app-bank-step-result (another)="another()" (goDashboard)="goToDashboard()" />
+    }
+  }
+</div>

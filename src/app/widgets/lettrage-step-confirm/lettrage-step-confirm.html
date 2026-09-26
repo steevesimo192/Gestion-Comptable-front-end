@@ -1,0 +1,52 @@
+<div class="grid gap-6">
+  <div class="flex items-start gap-3 rounded-lg border border-warn-mark/40 bg-warn-bg px-4 py-3.5">
+    <app-icon name="alert" class="mt-0.5 flex-none text-warn" />
+    <div class="text-sm text-warn">
+      <p class="font-semibold">Confirmation : lettrage partiel</p>
+      <p class="mt-0.5">
+        {{ store.match().reste | fcfa }} restent non lettrés sur ce tiers après cette opération. Vous pourrez les
+        lettrer plus tard avec un autre règlement ou une autre facture.
+      </p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 class="panel-title mb-4">Récapitulatif du lettrage</h3>
+    <dl class="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+      <div class="sm:col-span-2">
+        <dt class="text-muted">Tiers</dt>
+        <dd class="mt-0.5 font-semibold">{{ store.selectedTiers()?.name }} ({{ store.selectedTiers()?.code }})</dd>
+      </div>
+      <div>
+        <dt class="text-muted">Factures sélectionnées ({{ store.selectedFactures().length }})</dt>
+        <dd class="mt-0.5 font-semibold">{{ store.match().totalFactures | fcfa }}</dd>
+        <dd class="mt-0.5 text-[0.8125rem] text-muted">{{ factureRefs() }}</dd>
+      </div>
+      <div>
+        <dt class="text-muted">Paiements sélectionnés ({{ store.selectedPaiements().length }})</dt>
+        <dd class="mt-0.5 font-semibold">{{ store.match().totalPaiements | fcfa }}</dd>
+        <dd class="mt-0.5 text-[0.8125rem] text-muted">{{ paiementRefs() }}</dd>
+      </div>
+      <div>
+        <dt class="text-muted">Montant lettré</dt>
+        <dd class="mt-0.5 font-semibold">{{ store.match().lettrable | fcfa }}</dd>
+      </div>
+      <div>
+        <dt class="text-muted">Reste non lettré</dt>
+        <dd class="mt-0.5 font-semibold text-warn">{{ store.match().reste | fcfa }}</dd>
+        <dd class="mt-0.5 text-[0.8125rem] text-muted">
+          @if (store.match().resteSide === 'facture') {
+            reste dû sur les factures
+          } @else {
+            reste disponible sur les paiements
+          }
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="flex flex-wrap gap-3">
+    <button type="button" class="btn btn-quiet" (click)="cancelled.emit()">Annuler</button>
+    <button type="button" class="btn btn-primary" (click)="confirmed.emit()">Confirmer le lettrage partiel</button>
+  </div>
+</div>

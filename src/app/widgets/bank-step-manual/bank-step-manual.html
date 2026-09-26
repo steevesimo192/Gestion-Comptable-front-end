@@ -1,0 +1,307 @@
+<div class="grid gap-6">
+  <div>
+    <h2 class="panel-title mb-1">Rapprochement manuel</h2>
+    <p class="panel-sub">
+      Choisissez une opération du relevé, cochez les écritures qui lui correspondent, puis associez-les.
+    </p>
+  </div>
+
+  <div class="flex items-start gap-3 rounded-lg border border-warn-mark/60 bg-warn-bg px-4 py-3.5" role="note">
+    <app-icon name="info" class="mt-0.5 flex-none text-warn" />
+    <ul class="list-disc pl-4 text-sm text-warn">
+      <li>Le total des écritures cochées doit être <strong>exactement</strong> le montant de l'opération.</li>
+      <li>Plusieurs écritures peuvent être associées à une seule opération (un virement groupé, par exemple).</li>
+      <li>Aucune écriture ne correspond ? Créez-la ici, ou gardez l'opération « à investiguer » avec une note.</li>
+    </ul>
+  </div>
+
+  <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-sm">
+    <span class="font-semibold">{{ store.progress().treated }} / {{ store.progress().total }} opérations traitées</span>
+    <span [class]="store.progress().remaining === 0 ? 'font-semibold text-ok' : 'text-muted'">
+      @if (store.progress().remaining === 0) {
+        Tout est traité : passez au récapitulatif.
+      } @else {
+        {{ store.progress().remaining }} opération{{ store.progress().remaining > 1 ? 's' : '' }} à traiter
+      }
+    </span>
+  </div>
+
+  @if (store.error(); as message) {
+    <p class="rounded-lg border border-bad/30 bg-bad-bg px-4 py-3 text-sm font-semibold text-bad" role="alert">{{ message }}</p>
+  }
+
+  <div class="grid gap-5 lg:grid-cols-2">
+    <section aria-labelledby="man-ops" class="flex min-w-0 flex-col rounded-xl border border-line bg-white">
+      <div class="border-b border-line px-4 py-3.5">
+        <h3 id="man-ops" class="mb-2.5 text-base font-semibold">Opérations du relevé ({{ store.openOps().length }})</h3>
+        <label class="sr-only" for="man-ops-search">Rechercher une opération</label>
+        <div class="relative">
+          <app-icon name="search" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" />
+          <input
+            id="man-ops-search"
+            type="search"
+            autocomplete="off"
+            placeholder="Rechercher un libellé ou un montant"
+            class="w-full rounded-lg border border-line bg-white py-2 pr-3 pl-9 text-sm focus:border-brand-600"
+            [value]="opQuery()"
+            (input)="onQuery('op', $event)"
+          />
+        </div>
+      </div>
+      <ul class="max-h-[26rem] flex-1 divide-y divide-line overflow-y-auto">
+        @for (o of visibleOps(); track o.id) {
+          <li>
+            <button
+              type="button"
+              class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-brand-50"
+              [class]="store.selectedOpId() === o.id ? 'bg-brand-50 ring-2 ring-brand-600 ring-inset' : ''"
+              [attr.aria-pressed]="store.selectedOpId() === o.id"
+              (click)="store.selectOperation(o.id)"
+            >
+              <span class="min-w-0">
+                <span class="block text-xs text-muted">{{ date(o.date) }}</span>
+                <span class="block truncate font-semibold">{{ o.libelle }}</span>
+              </span>
+              <span class="flex-none font-semibold whitespace-nowrap" [class]="o.montant > 0 ? 'text-ok' : ''">
+                {{ fmtSigned(o.montant) }}
+              </span>
+            </button>
+          </li>
+        } @empty {
+          <li class="px-4 py-8 text-center text-sm text-muted">
+            @if (store.openOps().length === 0) {
+              <app-icon name="check" class="mb-1 text-ok" /><br />Toutes les opérations sont traitées.
+            } @else {
+              Aucune opération ne correspond à votre recherche.
+            }
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section aria-labelledby="man-entries" class="flex min-w-0 flex-col rounded-xl border border-line bg-white">
+      <div class="border-b border-line px-4 py-3.5">
+        <h3 id="man-entries" class="mb-2.5 text-base font-semibold">
+          Écritures non rapprochées ({{ store.openEntries().length }})
+        </h3>
+        <label class="sr-only" for="man-entries-search">Rechercher une écriture</label>
+        <div class="relative">
+          <app-icon name="search" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" />
+          <input
+            id="man-entries-search"
+            type="search"
+            autocomplete="off"
+            placeholder="Rechercher un libellé, une référence ou un montant"
+            class="w-full rounded-lg border border-line bg-white py-2 pr-3 pl-9 text-sm focus:border-brand-600"
+            [value]="entryQuery()"
+            (input)="onQuery('entry', $event)"
+          />
+        </div>
+      </div>
+      <ul class="max-h-[26rem] flex-1 divide-y divide-line overflow-y-auto">
+        @for (e of visibleEntries(); track e.id) {
+          <li>
+            <label
+              class="flex cursor-pointer items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-brand-50"
+              [class]="checked().has(e.id) ? 'bg-brand-50' : ''"
+            >
+              <input
+                type="checkbox"
+                class="size-4 flex-none accent-brand-600"
+                [checked]="checked().has(e.id)"
+                [attr.aria-label]="'Cocher l’écriture ' + e.reference + ' ' + e.libelle"
+                (change)="store.toggleEntry(e.id)"
+              />
+              <span class="min-w-0 flex-1">
+                <span class="block text-xs text-muted">{{ date(e.date) }} · {{ e.reference }}</span>
+                <span class="block truncate font-semibold">{{ e.libelle }}</span>
+                @if (sameAmount(e.montant)) {
+                  <span class="badge badge-ok mt-1">Même montant</span>
+                }
+              </span>
+              <span class="flex-none font-semibold whitespace-nowrap" [class]="e.montant > 0 ? 'text-ok' : ''">
+                {{ fmtSigned(e.montant) }}
+              </span>
+            </label>
+          </li>
+        } @empty {
+          <li class="px-4 py-8 text-center text-sm text-muted">
+            @if (store.openEntries().length === 0) {
+              Aucune écriture non rapprochée sur cette période : créez l'écriture manquante depuis l'opération.
+            } @else {
+              Aucune écriture ne correspond à votre recherche.
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  </div>
+
+  <section aria-labelledby="man-assoc" class="rounded-xl border-2 border-brand-200 bg-brand-50/40 p-5">
+    <h3 id="man-assoc" class="mb-3 text-base font-semibold">Association</h3>
+
+    @if (store.selectedOp(); as op) {
+      <dl class="grid gap-4 text-sm sm:grid-cols-3">
+        <div>
+          <dt class="text-muted">Opération du relevé · {{ selectedKind() }}</dt>
+          <dd class="font-semibold">{{ op.libelle }}</dd>
+          <dd class="font-semibold" [class]="op.montant > 0 ? 'text-ok' : ''">{{ fmtSigned(op.montant) }}</dd>
+        </div>
+        <div>
+          <dt class="text-muted">Écritures cochées ({{ store.selectedEntries().length }})</dt>
+          <dd class="font-semibold">{{ fmtSigned(store.selectedTotal()) }}</dd>
+        </div>
+        <div>
+          <dt class="text-muted">Écart à combler</dt>
+          <dd class="font-semibold" [class]="store.difference() === 0 && store.selectedEntries().length > 0 ? 'text-ok' : 'text-warn'">
+            {{ fmt(store.difference()) }}
+          </dd>
+        </div>
+      </dl>
+
+      @if (store.associateHint(); as hint) {
+        <p class="mt-3 text-sm text-warn" role="status">{{ hint }}</p>
+      } @else {
+        <p class="mt-3 flex items-center gap-2 text-sm font-semibold text-ok" role="status">
+          <app-icon name="check" /> Les montants correspondent : vous pouvez associer.
+        </p>
+      }
+
+      <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <button type="button" class="btn btn-quiet w-full sm:w-auto" (click)="store.openCreate()">
+            <app-icon name="plus" /> Créer l'écriture manquante
+          </button>
+          <button type="button" class="btn btn-warn w-full sm:w-auto" (click)="store.openInvestigate()">
+            <app-icon name="search" /> Marquer à investiguer
+          </button>
+        </div>
+        <button
+          type="button"
+          class="btn btn-primary w-full sm:w-auto"
+          [disabled]="!store.canAssociate()"
+          (click)="store.associateSelection()"
+        >
+          <app-icon name="link" /> Associer la sélection
+        </button>
+      </div>
+
+      @if (store.createOpen()) {
+        <div class="mt-5 rounded-lg border border-line bg-white p-4">
+          <h4 class="mb-1 text-sm font-semibold">Créer l'écriture manquante</h4>
+          <p class="mb-4 text-sm text-muted">
+            L'écriture reprend le montant de l'opération ({{ fmtSigned(op.montant) }}) et sera rapprochée aussitôt.
+          </p>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="mb-1 block text-sm font-semibold" for="man-create-date">Date</label>
+              <input
+                id="man-create-date"
+                type="date"
+                class="w-full rounded-lg border border-line bg-white px-3 py-2 focus:border-brand-600"
+                [value]="store.createForm().date"
+                (input)="onCreateField('date', $event)"
+              />
+            </div>
+            <div>
+              <label class="mb-1 block text-sm font-semibold" for="man-create-compte">Compte de contrepartie</label>
+              <select
+                id="man-create-compte"
+                class="w-full rounded-lg border border-line bg-white px-3 py-2 focus:border-brand-600"
+                (change)="onCreateField('contrepartie', $event)"
+              >
+                <option value="" [selected]="store.createForm().contrepartie === ''" disabled>Choisir un compte</option>
+                @for (c of store.counterparts; track c.code) {
+                  <option [value]="c.code" [selected]="store.createForm().contrepartie === c.code">{{ c.code }} · {{ c.label }}</option>
+                }
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="mb-1 block text-sm font-semibold" for="man-create-libelle">Libellé de l'écriture</label>
+              <input
+                id="man-create-libelle"
+                type="text"
+                autocomplete="off"
+                class="w-full rounded-lg border border-line bg-white px-3 py-2 focus:border-brand-600"
+                [value]="store.createForm().libelle"
+                (input)="onCreateField('libelle', $event)"
+              />
+            </div>
+          </div>
+          @if (store.createError(); as msg) {
+            <p class="mt-3 text-sm text-bad" role="alert">{{ msg }}</p>
+          }
+          <div class="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button type="button" class="btn btn-quiet w-full sm:w-auto" (click)="store.closeCreate()">Annuler</button>
+            <button type="button" class="btn btn-success w-full sm:w-auto" (click)="store.createMissingEntry()">
+              <app-icon name="check" /> Créer et rapprocher
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (store.investigateOpen()) {
+        <div class="mt-5 rounded-lg border border-warn-mark/60 bg-white p-4">
+          <label class="mb-1 block text-sm font-semibold" for="man-note">Pourquoi cette opération reste-t-elle ouverte ?</label>
+          <p class="mb-2 text-sm text-muted">Elle restera visible au prochain rapprochement, avec cette note.</p>
+          <textarea
+            id="man-note"
+            rows="3"
+            class="w-full rounded-lg border bg-white px-3 py-2"
+            [class]="store.noteError() ? 'border-bad' : 'border-line focus:border-brand-600'"
+            placeholder="Ex. Virement d'un donneur inconnu : demander le détail à la banque."
+            [value]="store.note()"
+            (input)="onNote($event)"
+          ></textarea>
+          @if (store.noteError(); as msg) {
+            <p class="mt-1.5 text-sm text-bad" role="alert">{{ msg }}</p>
+          }
+          <div class="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button type="button" class="btn btn-quiet w-full sm:w-auto" (click)="store.closeInvestigate()">Annuler</button>
+            <button type="button" class="btn btn-warn w-full sm:w-auto" (click)="store.markInvestigate()">Marquer à investiguer</button>
+          </div>
+        </div>
+      }
+    } @else {
+      <p class="text-sm text-muted">
+        Sélectionnez d'abord une opération du relevé dans la colonne de gauche.
+      </p>
+    }
+  </section>
+
+  @if (store.treatedOps().length > 0) {
+    <details class="rounded-xl border border-line bg-white">
+      <summary class="cursor-pointer px-5 py-3.5 text-base font-semibold">
+        Opérations déjà traitées ({{ store.treatedOps().length }})
+      </summary>
+      <ul class="divide-y divide-line border-t border-line">
+        @for (o of store.treatedOps(); track o.id) {
+          <li class="flex flex-col gap-2 px-5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0">
+              <p class="text-xs text-muted">{{ date(o.date) }}</p>
+              <p class="truncate font-semibold">{{ o.libelle }} · <span [class]="o.montant > 0 ? 'text-ok' : ''">{{ fmtSigned(o.montant) }}</span></p>
+              @if (o.statut === 'rapprochee') {
+                <p class="text-muted">
+                  Rapprochée {{ o.mode === 'auto' ? 'automatiquement' : 'manuellement' }} · {{ refs(o) }}
+                  @if (o.createdEntryId) {
+                    (écriture créée)
+                  }
+                </p>
+              } @else {
+                <p class="text-warn">À investiguer : {{ o.note }}</p>
+              }
+            </div>
+            <button
+              type="button"
+              class="btn btn-quiet btn-sm self-start sm:self-center"
+              [attr.aria-label]="(o.statut === 'rapprochee' ? 'Annuler le rapprochement de ' : 'Remettre à traiter ') + o.libelle"
+              (click)="store.undoOperation(o.id)"
+            >
+              <app-icon name="undo" /> {{ o.statut === 'rapprochee' ? 'Annuler le rapprochement' : 'Remettre à traiter' }}
+            </button>
+          </li>
+        }
+      </ul>
+    </details>
+  }
+</div>

@@ -1,0 +1,89 @@
+<div class="grid gap-6">
+  @if (posted()) {
+    <div class="flex items-start gap-3 rounded-lg border border-ok/30 bg-ok-bg px-4 py-4" role="status">
+      <span class="grid size-9 flex-none place-items-center rounded-full bg-ok text-white">
+        <app-icon name="check" />
+      </span>
+      <div>
+        <p class="font-semibold text-ok">Écriture comptabilisée avec succès</p>
+        <p class="mt-0.5 text-sm text-ink-2">
+          L'écriture {{ store.reference() }} a été enregistrée et les soldes des comptes concernés ont été mis à jour.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 class="panel-title mb-4">Récapitulatif de l'écriture comptabilisée</h3>
+      <dl class="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+        <div>
+          <dt class="text-muted">Référence</dt>
+          <dd class="mt-0.5 font-semibold">{{ store.reference() }}</dd>
+        </div>
+        <div>
+          <dt class="text-muted">Journal</dt>
+          <dd class="mt-0.5 font-semibold">{{ store.selectedJournal()?.label }}</dd>
+        </div>
+        <div>
+          <dt class="text-muted">Date</dt>
+          <dd class="mt-0.5 font-semibold">{{ store.informationsValue().date }}</dd>
+        </div>
+        <div>
+          <dt class="text-muted">Tiers</dt>
+          <dd class="mt-0.5 font-semibold">{{ store.tiers()?.label ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt class="text-muted">Montant</dt>
+          <dd class="mt-0.5 font-semibold">{{ store.totalDebit() | fcfa }}</dd>
+        </div>
+        <div>
+          <dt class="text-muted">Statut</dt>
+          <dd class="mt-0.5"><span class="badge badge-posted">Comptabilisée</span></dd>
+        </div>
+      </dl>
+      <p class="mt-4 border-t border-line pt-3 text-sm text-muted">
+        Pour la modifier, utilisez « Extourner » depuis le détail de l'écriture : une écriture comptabilisée ne se
+        corrige jamais directement.
+      </p>
+    </div>
+
+    <div class="panel border-brand-200 bg-brand-50">
+      <h3 class="panel-title mb-3 text-brand-900">Soldes mis à jour</h3>
+      <ul class="grid gap-2.5">
+        @for (a of movedAccounts(); track a.code) {
+          <li class="flex items-center justify-between gap-3 text-sm">
+            <span class="text-brand-900">{{ a.code }} — {{ a.label }}</span>
+            <span class="font-semibold" [class.text-ok]="a.delta >= 0" [class.text-bad]="a.delta < 0">
+              {{ a.delta >= 0 ? '+' : '' }}{{ a.delta | fcfa }}
+            </span>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <div class="grid gap-3 sm:grid-cols-2">
+      <button type="button" class="btn btn-primary" (click)="newEntry.emit()">Saisir une nouvelle écriture</button>
+      <button type="button" class="btn btn-quiet" (click)="viewEntry.emit()">Voir l'écriture</button>
+      <button type="button" class="btn btn-link" (click)="goDashboard.emit()">Retour au tableau de bord</button>
+      <button type="button" class="btn btn-link" (click)="goDashboard.emit()">Voir les soldes des comptes</button>
+    </div>
+  } @else {
+    <div class="flex items-start gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-4" role="status">
+      <span class="grid size-9 flex-none place-items-center rounded-full bg-brand-600 text-white">
+        <app-icon name="file" />
+      </span>
+      <div>
+        <p class="font-semibold text-brand-900">Écriture enregistrée en brouillon</p>
+        <p class="mt-0.5 text-sm text-ink-2">
+          Elle reste librement modifiable et n'est pas intégrée aux soldes définitifs tant qu'elle n'est pas
+          comptabilisée.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid gap-3 sm:grid-cols-2">
+      <button type="button" class="btn btn-primary" (click)="viewEntry.emit()">Continuer à modifier</button>
+      <button type="button" class="btn btn-quiet" (click)="newEntry.emit()">Saisir une nouvelle écriture</button>
+      <button type="button" class="btn btn-link" (click)="goDashboard.emit()">Retour au tableau de bord</button>
+    </div>
+  }
+</div>

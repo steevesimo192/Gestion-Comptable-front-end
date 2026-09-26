@@ -1,0 +1,111 @@
+<form [formGroup]="group" class="grid gap-6" (ngSubmit)="$event.preventDefault()">
+  <div>
+    <h2 class="panel-title mb-1">Informations du dossier</h2>
+    <p class="panel-sub">Ce dossier sera rattaché à une entreprise déjà enregistrée dans votre espace.</p>
+  </div>
+
+  <div class="relative">
+    <label class="mb-1.5 block text-sm font-semibold" for="entreprise">Entreprise <span class="text-bad">*</span></label>
+    <button
+      type="button"
+      id="entreprise"
+      class="flex w-full items-center gap-2.5 rounded-lg border bg-white px-3 py-2.5 text-left"
+      [class]="group.controls.entrepriseId.invalid && group.controls.entrepriseId.touched ? 'border-bad' : 'border-line hover:border-brand-300'"
+      [attr.aria-expanded]="companyMenuOpen()"
+      aria-haspopup="listbox"
+      (click)="companyMenuOpen.set(!companyMenuOpen())"
+    >
+      <app-icon name="building" class="flex-none text-muted" />
+      <span class="min-w-0 flex-1 truncate" [class.text-muted]="!selectedCompany()">
+        {{ selectedCompany()?.name ?? 'Sélectionner une entreprise' }}
+      </span>
+      <app-icon name="chevron" class="flex-none" />
+    </button>
+
+    @if (companyMenuOpen()) {
+      <div class="absolute z-10 mt-1.5 w-full rounded-xl border border-line bg-white p-2 shadow-[0_12px_32px_rgba(42,10,71,0.16)]">
+        <label class="mb-2 flex items-center gap-2 rounded-lg border border-line px-2.5 py-1.5 focus-within:border-brand-600">
+          <app-icon name="search" class="flex-none text-muted" />
+          <span class="sr-only">Rechercher une entreprise</span>
+          <input
+            type="text"
+            class="w-full min-w-0 bg-transparent text-sm outline-none"
+            placeholder="Rechercher une entreprise"
+            [value]="companyQuery()"
+            (input)="companyQuery.set($any($event.target).value)"
+          />
+        </label>
+        <ul class="max-h-52 overflow-y-auto" role="listbox" aria-label="Entreprises disponibles">
+          @for (c of filteredCompanies(); track c.id) {
+            <li
+              role="option"
+              tabindex="0"
+              class="cursor-pointer rounded-lg px-3 py-2 hover:bg-brand-50 focus-visible:bg-brand-50"
+              [class.bg-brand-100]="c.id === selectedCompany()?.id"
+              [attr.aria-selected]="c.id === selectedCompany()?.id"
+              (click)="pickCompany(c.id)"
+              (keydown.enter)="pickCompany(c.id)"
+            >
+              <strong class="block text-sm">{{ c.name }}</strong>
+              <small class="text-muted">{{ c.sector }}, {{ c.city }}</small>
+            </li>
+          } @empty {
+            <li class="px-3 py-4 text-center text-sm text-ink-2">
+              Entreprise introuvable. Vérifiez qu'elle existe dans le service Entreprise avant de continuer.
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (group.controls.entrepriseId.invalid && group.controls.entrepriseId.touched) {
+      <p class="mt-1.5 text-sm text-bad">Choisissez l'entreprise pour laquelle ouvrir ce dossier.</p>
+    }
+  </div>
+
+  <div>
+    <label class="mb-1.5 block text-sm font-semibold" for="code">Code du dossier <span class="text-bad">*</span></label>
+    <input
+      id="code"
+      type="text"
+      formControlName="code"
+      autocomplete="off"
+      placeholder="Ex. KAM-2027"
+      class="w-full rounded-lg border bg-white px-3 py-2.5 uppercase placeholder:normal-case"
+      [class]="group.controls.code.invalid && group.controls.code.touched ? 'border-bad' : 'border-line focus:border-brand-600'"
+      (input)="onCodeInput($any($event.target).value)"
+    />
+    <p class="mt-1.5 text-sm text-muted">Lettres, chiffres et tirets, 3 à 12 caractères. Sert d'identifiant court dans les exports.</p>
+
+    @if (group.controls.code.touched) {
+      @if (group.controls.code.errors?.['required']) {
+        <p class="mt-1 text-sm text-bad">Le code du dossier est obligatoire.</p>
+      } @else if (group.controls.code.errors?.['taken']) {
+        <p class="mt-1 flex items-center gap-1.5 text-sm text-bad">
+          <app-icon name="alert" class="flex-none" /> Ce code est déjà utilisé par un autre dossier.
+        </p>
+      } @else if (group.controls.code.errors?.['pattern']) {
+        <p class="mt-1 text-sm text-bad">Utilisez uniquement des lettres, des chiffres et des tirets.</p>
+      } @else if (group.controls.code.value) {
+        <p class="mt-1 flex items-center gap-1.5 text-sm text-ok">
+          <app-icon name="check" class="flex-none" /> Ce code est disponible.
+        </p>
+      }
+    }
+  </div>
+
+  <div>
+    <label class="mb-1.5 block text-sm font-semibold" for="libelle">Libellé du dossier <span class="text-bad">*</span></label>
+    <input
+      id="libelle"
+      type="text"
+      formControlName="libelle"
+      placeholder="Ex. Kamga Distribution — Comptabilité 2027"
+      class="w-full rounded-lg border bg-white px-3 py-2.5"
+      [class]="group.controls.libelle.invalid && group.controls.libelle.touched ? 'border-bad' : 'border-line focus:border-brand-600'"
+    />
+    @if (group.controls.libelle.invalid && group.controls.libelle.touched) {
+      <p class="mt-1.5 text-sm text-bad">Donnez un libellé pour reconnaître ce dossier dans vos listes.</p>
+    }
+  </div>
+</form>

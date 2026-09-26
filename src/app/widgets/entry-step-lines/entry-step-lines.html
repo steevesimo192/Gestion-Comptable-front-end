@@ -1,0 +1,202 @@
+<div class="grid gap-6">
+  <div>
+    <h2 class="panel-title mb-1">Lignes de l'écriture</h2>
+    <p class="panel-sub">
+      Chaque ligne mouvemente un compte en débit ou en crédit. Le total des deux colonnes doit être identique.
+    </p>
+  </div>
+
+  @if (store.postError(); as message) {
+    <div class="flex items-start gap-3 rounded-lg border border-bad/30 bg-bad-bg px-4 py-3.5" role="alert">
+      <app-icon name="alert" class="mt-0.5 flex-none text-bad" />
+      <p class="text-sm font-semibold text-bad">{{ message }}</p>
+    </div>
+  }
+
+  <div class="-mx-1 overflow-x-auto px-1">
+    <table class="w-full min-w-[620px] border-separate border-spacing-y-2">
+      <thead>
+        <tr class="text-left text-[0.8125rem] text-muted">
+          <th scope="col" class="w-8 pb-1 font-semibold">#</th>
+          <th scope="col" class="pb-1 pl-2 font-semibold">Compte</th>
+          <th scope="col" class="pb-1 pl-2 font-semibold">Intitulé</th>
+          <th scope="col" class="w-32 pb-1 pl-2 text-right font-semibold">Débit</th>
+          <th scope="col" class="w-32 pb-1 pl-2 text-right font-semibold">Crédit</th>
+          <th scope="col" class="w-10 pb-1"><span class="sr-only">Retirer</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (line of lines.controls; track line; let i = $index) {
+          <tr [formGroup]="line" class="align-top">
+            <td class="pt-2.5 pr-2 text-sm text-muted">{{ i + 1 }}</td>
+
+            <td class="relative pl-2">
+              <button
+                #trigger
+                type="button"
+                class="flex w-full min-w-[190px] items-center gap-2 rounded-lg border bg-white px-2.5 py-2 text-left text-sm"
+                [class]="line.controls.compte.invalid && line.controls.compte.touched ? 'border-bad' : 'border-line hover:border-brand-300'"
+                aria-haspopup="listbox"
+                [attr.aria-expanded]="openPicker() === i"
+                [attr.aria-label]="'Compte de la ligne ' + (i + 1)"
+                (click)="togglePicker(i, trigger)"
+              >
+                <span class="min-w-0 flex-1 truncate" [class.text-muted]="!line.controls.compte.value">
+                  @if (line.controls.compte.value) {
+                    {{ line.controls.compte.value }} — {{ accountLabel(line.controls.compte.value) }}
+                  } @else {
+                    Choisir un compte
+                  }
+                </span>
+                <app-icon name="chevron" class="flex-none text-muted" />
+              </button>
+
+              @if (openPicker() === i) {
+                <div
+                  class="fixed z-30 w-72 rounded-xl border border-line bg-white p-2 shadow-[0_12px_32px_rgba(42,10,71,0.16)]"
+                  [style.left.px]="pickerPos().left"
+                  [style.top.px]="pickerPos().top"
+                  [style.bottom.px]="pickerPos().bottom"
+                >
+                  <label class="mb-2 flex items-center gap-2 rounded-lg border border-line px-2.5 py-1.5 focus-within:border-brand-600">
+                    <app-icon name="search" class="flex-none text-muted" />
+                    <span class="sr-only">Rechercher un compte</span>
+                    <input
+                      type="text"
+                      class="w-full min-w-0 bg-transparent text-sm outline-none"
+                      placeholder="Code ou intitulé du compte"
+                      [value]="accountQuery()"
+                      (input)="accountQuery.set($any($event.target).value)"
+                    />
+                  </label>
+                  <ul class="max-h-52 overflow-y-auto" role="listbox" aria-label="Comptes disponibles">
+                    @for (a of filteredAccounts(); track a.code) {
+                      <li
+                        role="option"
+                        tabindex="0"
+                        class="cursor-pointer rounded-lg px-3 py-2 hover:bg-brand-50 focus-visible:bg-brand-50"
+                        [attr.aria-selected]="a.code === line.controls.compte.value"
+                        (click)="pickAccount(i, a.code)"
+                        (keydown.enter)="pickAccount(i, a.code)"
+                      >
+                        <strong class="block text-sm">{{ a.code }} — {{ a.label }}</strong>
+                      </li>
+                    } @empty {
+                      <li class="px-3 py-4 text-center text-sm text-ink-2">
+                        Compte introuvable. Vérifiez le code, ou choisissez le compte le plus proche dans la liste.
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+
+              @if (line.controls.compte.invalid && line.controls.compte.touched) {
+                <p class="mt-1 text-[0.8125rem] text-bad">Choisissez un compte.</p>
+              }
+            </td>
+
+            <td class="pl-2">
+              <input
+                type="text"
+                formControlName="libelle"
+                placeholder="Intitulé (facultatif)"
+                [attr.aria-label]="'Intitulé de la ligne ' + (i + 1)"
+                class="w-full min-w-[160px] rounded-lg border border-line bg-white px-2.5 py-2 text-sm focus:border-brand-600"
+              />
+            </td>
+
+            <td class="pl-2 text-right">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                formControlName="debit"
+                placeholder="0"
+                [attr.aria-label]="'Débit de la ligne ' + (i + 1)"
+                class="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-right text-sm focus:border-brand-600"
+              />
+            </td>
+
+            <td class="pl-2 text-right">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                formControlName="credit"
+                placeholder="0"
+                [attr.aria-label]="'Crédit de la ligne ' + (i + 1)"
+                class="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-right text-sm focus:border-brand-600"
+              />
+            </td>
+
+            <td class="pt-1.5 pl-2 text-center">
+              <button
+                type="button"
+                class="grid size-8 place-items-center rounded-lg text-muted hover:bg-bad-bg hover:text-bad disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted"
+                [disabled]="lines.length <= 2"
+                [attr.aria-label]="'Retirer la ligne ' + (i + 1)"
+                (click)="removeLine(i)"
+              >
+                <app-icon name="close" />
+              </button>
+            </td>
+          </tr>
+
+          @if (lineError(line); as message) {
+            <tr>
+              <td></td>
+              <td colspan="5" class="pb-1 pl-2 text-[0.8125rem] text-bad">{{ message }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <button type="button" class="btn btn-quiet w-fit" (click)="addLine()">
+    <app-icon name="plus" />
+    Ajouter une ligne
+  </button>
+
+  <div
+    class="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3.5"
+    [class]="tone() === 'ok' ? 'border-ok/30 bg-ok-bg' : tone() === 'bad' ? 'border-bad/30 bg-bad-bg' : 'border-line bg-brand-50'"
+    aria-live="polite"
+  >
+    <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+      <span [class]="tone() === 'ok' ? 'text-ok' : tone() === 'bad' ? 'text-bad' : 'text-ink-2'">
+        Débit <strong class="font-semibold">{{ store.totalDebit() | fcfa }}</strong>
+      </span>
+      <span [class]="tone() === 'ok' ? 'text-ok' : tone() === 'bad' ? 'text-bad' : 'text-ink-2'">
+        Crédit <strong class="font-semibold">{{ store.totalCredit() | fcfa }}</strong>
+      </span>
+    </div>
+
+    @if (tone() === 'ok') {
+      <span class="badge badge-ok">
+        <app-icon name="check" class="text-[0.85em]" /> Équilibrée
+      </span>
+    } @else if (tone() === 'bad') {
+      <span class="flex items-center gap-1.5 text-sm font-semibold text-bad">
+        <app-icon name="alert" class="flex-none" />
+        Écart de {{ (store.gap() < 0 ? -store.gap() : store.gap()) | fcfa }}. Ajoutez une ligne ou modifiez les montants.
+      </span>
+    } @else {
+      <span class="text-sm text-ink-2">Saisissez les montants : l'équilibre s'affiche en temps réel.</span>
+    }
+  </div>
+
+  @if (blockers().length > 0) {
+    <div class="rounded-lg border border-line bg-white px-4 py-3 text-sm text-ink-2" aria-live="polite">
+      <p class="font-semibold text-ink">Pour pouvoir comptabiliser :</p>
+      <ul class="mt-1 list-disc pl-5">
+        @for (reason of blockers(); track reason) {
+          <li>{{ reason }}</li>
+        }
+        @if (hiddenBlockers() > 0) {
+          <li>et {{ hiddenBlockers() }} autre{{ hiddenBlockers() > 1 ? 's' : '' }} point{{ hiddenBlockers() > 1 ? 's' : '' }} à corriger.</li>
+        }
+      </ul>
+    </div>
+  }
+</div>

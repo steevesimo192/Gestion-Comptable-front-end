@@ -1,0 +1,77 @@
+<div [formGroup]="group" class="grid gap-6">
+  <div>
+    <h2 class="panel-title mb-1">Référentiel & devises</h2>
+    <p class="panel-sub">Ces choix déterminent le plan de comptes et les montants affichés dans tout le dossier.</p>
+  </div>
+
+  <div class="flex items-start gap-3 rounded-lg border border-warn-mark/40 bg-warn-bg px-4 py-3.5">
+    <app-icon name="alert" class="mt-0.5 flex-none text-warn" />
+    <p class="text-sm text-warn">
+      Le référentiel génère automatiquement le plan de comptes du dossier. Une fois des écritures saisies, ce choix
+      devient difficile à changer : prenez le temps de le valider.
+    </p>
+  </div>
+
+  <div>
+    <span class="mb-2 block text-sm font-semibold" id="referentiel-label">Référentiel comptable <span class="text-bad">*</span></span>
+    <div class="grid gap-2.5 sm:grid-cols-2" role="radiogroup" aria-labelledby="referentiel-label">
+      @for (r of store.referentials; track r.id) {
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="group.controls.referentielId.value === r.id"
+          class="rounded-lg border px-4 py-3 text-left transition-colors"
+          [class]="group.controls.referentielId.value === r.id ? 'border-brand-600 bg-brand-50' : 'border-line bg-white hover:border-brand-300'"
+          (click)="pickReferentiel(r.id)"
+        >
+          <span class="flex items-center gap-2.5">
+            <span
+              class="grid size-4 flex-none place-items-center rounded-full border-2"
+              [class]="group.controls.referentielId.value === r.id ? 'border-brand-600 bg-brand-600' : 'border-line'"
+            >
+              @if (group.controls.referentielId.value === r.id) {
+                <span class="size-1.5 rounded-full bg-white"></span>
+              }
+            </span>
+            <strong class="text-sm">{{ r.label }}</strong>
+          </span>
+          <p class="mt-1 pl-[26px] text-[0.8125rem] text-muted">{{ r.description }}</p>
+        </button>
+      }
+    </div>
+    @if (group.controls.referentielId.invalid && group.controls.referentielId.touched) {
+      <p class="mt-1.5 text-sm text-bad">Choisissez un référentiel comptable.</p>
+    }
+  </div>
+
+  <div class="grid gap-6 sm:grid-cols-2">
+    <div>
+      <label class="mb-1.5 block text-sm font-semibold" for="devise">Devise fonctionnelle <span class="text-bad">*</span></label>
+      <select
+        id="devise"
+        formControlName="deviseFonctionnelleId"
+        class="w-full rounded-lg border bg-white px-3 py-2.5"
+        [class]="group.controls.deviseFonctionnelleId.invalid && group.controls.deviseFonctionnelleId.touched ? 'border-bad' : 'border-line focus:border-brand-600'"
+      >
+        <option value="" disabled>Choisir une devise</option>
+        @for (c of store.currencies; track c.code) {
+          <option [value]="c.code">{{ c.label }}</option>
+        }
+      </select>
+      <p class="mt-1.5 text-sm text-muted">Devise dans laquelle les comptes et rapports du dossier sont exprimés.</p>
+      @if (group.controls.deviseFonctionnelleId.invalid && group.controls.deviseFonctionnelleId.touched) {
+        <p class="mt-1 text-sm text-bad">Choisissez la devise fonctionnelle du dossier.</p>
+      }
+    </div>
+
+    <div>
+      <label class="mb-1.5 block text-sm font-semibold" for="fuseau">Fuseau horaire</label>
+      <select id="fuseau" formControlName="fuseauHoraire" class="w-full rounded-lg border border-line bg-white px-3 py-2.5 focus:border-brand-600">
+        @for (t of store.timezones; track t.id) {
+          <option [value]="t.id">{{ t.label }}</option>
+        }
+      </select>
+      <p class="mt-1.5 text-sm text-muted">Pré-rempli selon votre position, modifiable si le dossier se trouve ailleurs.</p>
+    </div>
+  </div>
+</div>

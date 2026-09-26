@@ -1,0 +1,31 @@
+<ol class="flex items-start" aria-label="Étapes de création du dossier">
+  @for (s of steps(); track s.index; let last = $last) {
+    <li class="flex flex-1 items-center last:flex-none">
+      <button
+        type="button"
+        class="flex flex-col items-center gap-2 text-center disabled:cursor-not-allowed"
+        [disabled]="s.index > furthest()"
+        [attr.aria-current]="s.index === current() ? 'step' : null"
+        (click)="stepClick.emit(s.index)"
+      >
+        <span class="grid size-9 flex-none place-items-center rounded-full border-2 text-sm font-bold transition-colors" [class]="dotClass(s.index)">
+          @if (s.index < current()) {
+            <app-icon name="check" class="text-[0.9em]" />
+          } @else {
+            {{ s.index }}
+          }
+        </span>
+        <span class="max-w-[112px] text-xs leading-tight font-medium" [class]="s.index === current() ? 'text-brand-800' : 'text-muted'">
+          {{ s.label }}
+          @if (s.optional) {
+            <span class="block text-[0.7rem] font-normal text-muted">(optionnel)</span>
+          }
+        </span>
+      </button>
+
+      @if (!last) {
+        <span class="mx-2 mt-[-22px] h-0.5 flex-1 rounded-full transition-colors" [class]="lineClass(s.index)"></span>
+      }
+    </li>
+  }
+</ol>

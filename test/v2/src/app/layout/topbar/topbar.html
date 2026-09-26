@@ -1,0 +1,110 @@
+<header class="flex flex-wrap items-center gap-3 px-4 py-3 lg:flex-nowrap lg:px-8 lg:py-3.5">
+  <button
+    type="button"
+    class="inline-flex rounded-lg border border-line bg-white p-2.5 text-lg lg:hidden"
+    (click)="menu.emit()"
+    aria-label="Ouvrir le menu"
+  >
+    <app-icon name="menu" />
+  </button>
+
+  <!-- Dossier et exercice en cours : toujours visibles, pour savoir où l'on travaille -->
+  <div class="relative">
+    <button
+      type="button"
+      class="flex items-center gap-2.5 rounded-lg border border-line bg-white px-3 py-1.5 text-left text-brand-800 hover:border-brand-300"
+      aria-haspopup="listbox"
+      [attr.aria-expanded]="open()"
+      (click)="open.set(!open())"
+    >
+      <app-icon name="building" />
+      <span class="flex flex-col leading-tight text-ink">
+        <strong class="text-[0.9rem]">{{ store.data().dossier.name }}</strong>
+        <small class="text-[0.8125rem] text-muted">{{ store.data().dossier.exercice }}</small>
+      </span>
+      <app-icon name="chevron" />
+    </button>
+
+    @if (open()) {
+      <ul
+        class="absolute top-[calc(100%+6px)] left-0 w-max max-w-[340px] min-w-full rounded-xl border border-line bg-white p-1.5 shadow-[0_12px_32px_rgba(42,10,71,0.16)]"
+        role="listbox"
+        aria-label="Changer de dossier comptable"
+      >
+        @for (d of store.dossiers; track d.id) {
+          <li
+            role="option"
+            tabindex="0"
+            class="flex cursor-pointer flex-col rounded-lg px-3 py-2 hover:bg-brand-50 focus-visible:bg-brand-50"
+            [class.bg-brand-100]="d.id === store.dossierId()"
+            [attr.aria-selected]="d.id === store.dossierId()"
+            (click)="pick(d.id)"
+            (keydown.enter)="pick(d.id)"
+          >
+            <strong>{{ d.name }}</strong>
+            <small class="text-[0.8125rem] text-muted">{{ d.sector }}, {{ d.city }}</small>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <span class="hidden items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1 text-[0.8125rem] font-semibold text-brand-800 xl:inline-flex">
+    <span class="size-2 rounded-full bg-ok" aria-hidden="true"></span>
+    {{ store.data().closing.periodLabel }}, période ouverte
+  </span>
+
+  <label class="hidden min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-line bg-white px-3 py-2 text-muted focus-within:border-brand-600 md:flex">
+    <app-icon name="search" />
+    <span class="sr-only">Rechercher</span>
+    <input
+      type="search"
+      class="min-w-0 flex-1 bg-transparent outline-none"
+      placeholder="Rechercher un compte, une pièce, un tiers"
+    />
+  </label>
+
+  <div class="ml-auto flex items-center gap-3">
+    <div class="flex rounded-lg bg-brand-100 p-[3px]" role="group" aria-label="Type d'affichage">
+      <button
+        type="button"
+        class="rounded-md px-3 py-1.5 text-sm font-semibold text-brand-800"
+        [class.bg-white]="store.role() === 'comptable'"
+        [class.shadow-sm]="store.role() === 'comptable'"
+        [attr.aria-pressed]="store.role() === 'comptable'"
+        (click)="store.setRole('comptable')"
+      >
+        Comptable
+      </button>
+      <button
+        type="button"
+        class="rounded-md px-3 py-1.5 text-sm font-semibold text-brand-800"
+        [class.bg-white]="store.role() === 'dirigeant'"
+        [class.shadow-sm]="store.role() === 'dirigeant'"
+        [attr.aria-pressed]="store.role() === 'dirigeant'"
+        (click)="store.setRole('dirigeant')"
+      >
+        Dirigeant
+      </button>
+    </div>
+
+    <button type="button" class="relative rounded-lg p-2 text-xl text-ink-2 hover:bg-white" aria-label="Notifications">
+      <app-icon name="bell" />
+      @if (store.urgentCount() > 0) {
+        <span
+          class="absolute top-0.5 right-0.5 grid min-w-[18px] place-items-center rounded-full bg-bad px-1 text-[0.6875rem] leading-[18px] font-bold text-white"
+        >
+          {{ store.urgentCount() }}
+          <span class="sr-only">alertes urgentes</span>
+        </span>
+      }
+    </button>
+
+    <div class="flex items-center gap-2.5">
+      <span class="hidden text-sm font-semibold sm:block">{{ store.user().name }}</span>
+      <span class="grid size-9 place-items-center rounded-full bg-brand-600 text-sm font-bold text-white" aria-hidden="true">
+        {{ store.user().initials }}
+      </span>
+    </div>
+  </div>
+</header>

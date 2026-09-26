@@ -1,3 +1,139 @@
-/* You can add global styles to this file, and also import other style files */
-
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
+
+/* ==========================================================================
+   Thème Tailwind. Couleur de marque : violet Primecorn (#9333ea).
+   Modifiez les --color-brand-* pour rebrander toute l'interface.
+   ========================================================================== */
+@theme {
+  --color-brand-50: #faf5ff;
+  --color-brand-100: #f3e8ff;
+  --color-brand-200: #e9d5ff;
+  --color-brand-300: #d8b4fe;
+  --color-brand-400: #c084fc;
+  --color-brand-600: #9333ea;
+  --color-brand-700: #7e22ce;
+  --color-brand-800: #581c87;
+  --color-brand-900: #3b0764;
+  --color-brand-950: #2a0a47;
+
+  --color-ink: #1d1428;
+  --color-ink-2: #4b4159;
+  --color-muted: #6f6680;
+  --color-line: #e8e1f0;
+  --color-canvas: #f6f3fa;
+
+  --color-ok: #0f7a58;
+  --color-ok-bg: #e0f5ec;
+  --color-warn: #a5490a;
+  --color-warn-bg: #fdf0d5;
+  --color-warn-mark: #e9a23b;
+  --color-bad: #b42323;
+  --color-bad-bg: #fce8e8;
+
+  --font-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Hanken Grotesk', 'Segoe UI', system-ui, sans-serif;
+
+  --animate-grow: grow 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  @keyframes grow {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: scaleY(1);
+    }
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+  body {
+    @apply bg-canvas font-sans text-[15px] leading-normal text-ink antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display font-bold leading-tight tracking-tight;
+  }
+  button {
+    @apply cursor-pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* Petits blocs réutilisés partout (panneaux, boutons, pastilles). */
+@layer components {
+  .panel {
+    @apply min-w-0 flex-1 rounded-xl border border-line bg-white px-6 py-[22px];
+  }
+  .panel-head {
+    @apply mb-[18px] flex items-start justify-between gap-4;
+  }
+  .panel-title {
+    @apply text-[1.1rem];
+  }
+  .panel-sub {
+    @apply mt-0.5 text-sm text-muted;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-transparent px-3.5 py-2 text-sm leading-tight font-semibold whitespace-nowrap transition-colors;
+  }
+  .btn-primary {
+    @apply bg-brand-600 text-white hover:bg-brand-700;
+  }
+  .btn-quiet {
+    @apply border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100;
+  }
+  .btn-link {
+    @apply bg-transparent px-0 py-1 text-brand-700 underline decoration-1 underline-offset-4 hover:text-brand-900;
+  }
+  .btn-success {
+    @apply bg-ok text-white hover:brightness-95;
+  }
+  .btn-warn {
+    @apply border-warn-mark bg-warn-bg text-warn hover:brightness-95;
+  }
+  .btn-sm {
+    @apply px-2.5 py-1.5 text-[0.8125rem];
+  }
+  .btn:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+
+  /* Barre d'actions de bas d'écran : secondaire à gauche, action principale à droite. */
+  .action-bar {
+    @apply mt-8 flex flex-col-reverse gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between;
+  }
+  .action-group {
+    @apply flex flex-col gap-3 sm:flex-row sm:items-center;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.8125rem] font-semibold whitespace-nowrap;
+  }
+  .badge-draft {
+    @apply bg-warn-bg text-warn;
+  }
+  .badge-posted {
+    @apply bg-brand-100 text-brand-800;
+  }
+  .badge-locked {
+    @apply bg-[#ebe8ef] text-ink-2;
+  }
+  .badge-ok {
+    @apply bg-ok-bg text-ok;
+  }
+}

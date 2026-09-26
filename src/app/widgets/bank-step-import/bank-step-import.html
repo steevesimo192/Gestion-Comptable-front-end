@@ -1,0 +1,449 @@
+<div class="grid gap-8">
+  <div>
+    <h2 class="panel-title mb-1">Importer un relevé bancaire</h2>
+    <p class="panel-sub">Indiquez le compte, la période et les soldes du relevé, puis ajoutez ses opérations.</p>
+  </div>
+
+  @if (store.carryOver().length > 0) {
+    <div class="flex items-start gap-3 rounded-lg border border-warn-mark/60 bg-warn-bg px-4 py-3.5" role="note">
+      <app-icon name="alert" class="mt-0.5 flex-none text-warn" />
+      <div class="text-sm text-warn">
+        <p class="font-semibold">
+          {{ store.carryOver().length }} opération{{ store.carryOver().length > 1 ? 's' : '' }} à investiguer
+          restent ouvertes sur ce compte
+        </p>
+        <ul class="mt-1 list-disc pl-5">
+          @for (item of store.carryOver(); track item.op.id) {
+            <li>
+              {{ item.statementLabel }} · {{ date(item.op.date) }} · {{ item.op.libelle }} ·
+              <strong>{{ fmtSigned(item.op.montant) }}</strong>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  }
+
+  @if (store.inProgressRows().length > 0) {
+    <section aria-labelledby="bank-en-cours" class="rounded-xl border border-brand-200 bg-brand-50 px-5 py-4">
+      <h3 id="bank-en-cours" class="mb-3 text-base font-semibold text-brand-900">Rapprochements en cours</h3>
+      <ul class="grid gap-3">
+        @for (row of store.inProgressRows(); track row.statement.id) {
+          <li class="rounded-lg border border-brand-200 bg-white px-4 py-3">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div class="min-w-0">
+                <p class="font-semibold">{{ row.label }} <span class="font-normal text-muted">· {{ row.account }}</span></p>
+                <p class="text-sm text-muted">
+                  {{ row.progress.treated }} / {{ row.progress.total }} opérations traitées
+                </p>
+              </div>
+              @if (store.discardPending() === row.statement.id) {
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center" role="alert">
+                  <span class="text-sm text-bad">Abandonner ce rapprochement ? Le travail fait sera perdu.</span>
+                  <div class="flex gap-2">
+                    <button type="button" class="btn btn-quiet btn-sm" (click)="store.cancelDiscard()">Garder</button>
+                    <button type="button" class="btn btn-sm bg-bad text-white hover:brightness-95" (click)="store.confirmDiscard()">
+                      Abandonner
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <div class="flex gap-2">
+                  <button type="button" class="btn btn-link btn-sm" (click)="store.requestDiscard(row.statement.id)">
+                    Abandonner
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm" (click)="store.resume(row.statement.id)">
+                    Reprendre <app-icon name="arrow-right" />
+                  </button>
+                </div>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <section aria-labelledby="bank-infos">
+    <h3 id="bank-infos" class="mb-4 text-base font-semibold">1. Informations du relevé</h3>
+    <div class="grid gap-6 sm:grid-cols-2">
+      <div class="sm:col-span-2">
+        <label class="mb-1.5 block text-sm font-semibold" for="bank-compte">Compte bancaire <span class="text-bad">*</span></label>
+        <select
+          id="bank-compte"
+          class="w-full rounded-lg border bg-white px-3 py-2.5"
+          [class]="fieldError('compteId') ? 'border-bad' : 'border-line focus:border-brand-600'"
+          (change)="onField('compteId', $event)"
+        >
+          @for (a of store.accounts; track a.id) {
+            <option [value]="a.id" [selected]="a.id === store.form().compteId">{{ a.label }} ({{ a.code }})</option>
+          }
+        </select>
+        @if (fieldError('compteId'); as msg) {
+          <p class="mt-1.5 text-sm text-bad">{{ msg }}</p>
+        }
+      </div>
+
+      <div>
+        <label class="mb-1.5 block text-sm font-semibold" for="bank-debut">Période : du <span class="text-bad">*</span></label>
+        <input
+          id="bank-debut"
+          type="date"
+          class="w-full rounded-lg border bg-white px-3 py-2.5"
+          [class]="fieldError('debut') ? 'border-bad' : 'border-line focus:border-brand-600'"
+          [value]="store.form().debut"
+          (input)="onField('debut', $event)"
+        />
+        @if (fieldError('debut'); as msg) {
+          <p class="mt-1.5 text-sm text-bad">{{ msg }}</p>
+        }
+      </div>
+      <div>
+        <label class="mb-1.5 block text-sm font-semibold" for="bank-fin">au <span class="text-bad">*</span></label>
+        <input
+          id="bank-fin"
+          type="date"
+          class="w-full rounded-lg border bg-white px-3 py-2.5"
+          [class]="fieldError('fin') ? 'border-bad' : 'border-line focus:border-brand-600'"
+          [value]="store.form().fin"
+          (input)="onField('fin', $event)"
+        />
+        @if (fieldError('fin'); as msg) {
+          <p class="mt-1.5 text-sm text-bad">{{ msg }}</p>
+        }
+      </div>
+
+      <div>
+        <label class="mb-1.5 block text-sm font-semibold" for="bank-solde-initial">
+          Solde initial (FCFA) <span class="text-bad">*</span>
+        </label>
+        <input
+          id="bank-solde-initial"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          placeholder="Ex. 11 170 000"
+          class="w-full rounded-lg border bg-white px-3 py-2.5"
+          [class]="fieldError('soldeInitial') ? 'border-bad' : 'border-line focus:border-brand-600'"
+          [value]="store.form().soldeInitial"
+          (input)="onField('soldeInitial', $event)"
+        />
+        @if (fieldError('soldeInitial'); as msg) {
+          <p class="mt-1.5 text-sm text-bad">{{ msg }}</p>
+        } @else {
+          <p class="mt-1.5 text-sm text-muted">Solde en début de période, tel qu'il figure sur le relevé.</p>
+        }
+      </div>
+      <div>
+        <label class="mb-1.5 block text-sm font-semibold" for="bank-solde-final">
+          Solde final (FCFA) <span class="text-bad">*</span>
+        </label>
+        <input
+          id="bank-solde-final"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          placeholder="Ex. 9 267 000"
+          class="w-full rounded-lg border bg-white px-3 py-2.5"
+          [class]="fieldError('soldeFinal') ? 'border-bad' : 'border-line focus:border-brand-600'"
+          [value]="store.form().soldeFinal"
+          (input)="onField('soldeFinal', $event)"
+        />
+        @if (fieldError('soldeFinal'); as msg) {
+          <p class="mt-1.5 text-sm text-bad">{{ msg }}</p>
+        } @else {
+          <p class="mt-1.5 text-sm text-muted">Solde en fin de période. Un montant négatif s'écrit avec un signe moins.</p>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="bank-ops">
+    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <h3 id="bank-ops" class="text-base font-semibold">2. Opérations du relevé</h3>
+      <div class="inline-flex rounded-lg border border-line bg-canvas p-1" role="group" aria-label="Mode d'ajout des opérations">
+        <button
+          type="button"
+          class="rounded-md px-3.5 py-1.5 text-sm font-semibold transition-colors"
+          [class]="store.source() === 'fichier' ? 'bg-white text-brand-800 shadow-sm' : 'text-muted hover:text-ink'"
+          [attr.aria-pressed]="store.source() === 'fichier'"
+          (click)="store.chooseSource('fichier')"
+        >
+          Importer un fichier
+        </button>
+        <button
+          type="button"
+          class="rounded-md px-3.5 py-1.5 text-sm font-semibold transition-colors"
+          [class]="store.source() === 'manuel' ? 'bg-white text-brand-800 shadow-sm' : 'text-muted hover:text-ink'"
+          [attr.aria-pressed]="store.source() === 'manuel'"
+          (click)="store.chooseSource('manuel')"
+        >
+          Saisie manuelle
+        </button>
+      </div>
+    </div>
+
+    @if (store.source() === 'fichier') {
+      @if (store.fileName() === '') {
+        <div
+          class="flex flex-col items-center rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors"
+          [class]="dragging() ? 'border-brand-600 bg-brand-50' : 'border-line bg-canvas'"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave()"
+          (drop)="onDrop($event)"
+        >
+          <app-icon name="upload" class="mb-2 text-2xl text-brand-700" />
+          <p class="font-semibold">Glissez votre relevé ici</p>
+          <p class="mt-1 max-w-md text-sm text-muted">
+            Fichier CSV avec les colonnes Date, Libellé, puis Débit et Crédit (ou un seul Montant signé).
+          </p>
+          <div class="mt-5 flex flex-col gap-3 sm:flex-row">
+            <label class="btn btn-primary cursor-pointer">
+              <app-icon name="upload" /> Choisir un fichier
+              <input type="file" accept=".csv,.txt,text/csv,text/plain" class="sr-only" (change)="onFileChosen($event)" />
+            </label>
+            <button type="button" class="btn btn-quiet" (click)="store.loadSample()">
+              <app-icon name="spark" /> Charger un relevé d'exemple
+            </button>
+          </div>
+          <button type="button" class="btn btn-link btn-sm mt-3" (click)="downloadTemplate()">
+            <app-icon name="download" /> Télécharger un modèle de fichier
+          </button>
+          @if (reading()) {
+            <p class="mt-3 text-sm text-muted" role="status">Lecture du fichier…</p>
+          }
+        </div>
+      } @else {
+        <div class="rounded-xl border border-line bg-white">
+          <div class="flex flex-col gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex min-w-0 items-center gap-3">
+              <app-icon name="file" class="flex-none text-brand-700" />
+              <div class="min-w-0">
+                <p class="truncate font-semibold">{{ store.fileName() }}</p>
+                @if (store.fileErrors().length === 0) {
+                  <p class="text-sm text-ok">{{ store.fileOps().length }} opérations lues</p>
+                } @else {
+                  <p class="text-sm text-bad">Fichier refusé</p>
+                }
+              </div>
+            </div>
+            <button type="button" class="btn btn-quiet btn-sm" (click)="store.clearFile()">Retirer ce fichier</button>
+          </div>
+
+          @if (store.fileErrors().length > 0) {
+            <div class="px-5 py-4" role="alert">
+              <p class="mb-2 text-sm font-semibold text-bad">Corrigez ces points puis importez le fichier de nouveau :</p>
+              <ul class="list-disc pl-5 text-sm text-bad">
+                @for (e of store.fileErrors().slice(0, 8); track $index) {
+                  <li>{{ e }}</li>
+                }
+              </ul>
+              @if (store.fileErrors().length > 8) {
+                <p class="mt-2 text-sm text-muted">… et {{ store.fileErrors().length - 8 }} autres lignes.</p>
+              }
+            </div>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[32rem] text-left text-sm">
+                <thead class="text-muted">
+                  <tr>
+                    <th scope="col" class="px-5 py-2 font-semibold">Date</th>
+                    <th scope="col" class="px-3 py-2 font-semibold">Libellé</th>
+                    <th scope="col" class="px-5 py-2 text-right font-semibold">Montant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (o of preview(); track $index) {
+                    <tr class="border-t border-line">
+                      <td class="px-5 py-2 whitespace-nowrap">{{ date(o.date) }}</td>
+                      <td class="px-3 py-2">{{ o.libelle }}</td>
+                      <td class="px-5 py-2 text-right font-semibold whitespace-nowrap" [class]="o.montant > 0 ? 'text-ok' : ''">
+                        {{ fmtSigned(o.montant) }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            @if (hiddenCount() > 0) {
+              <p class="border-t border-line px-5 py-2.5 text-sm text-muted">… et {{ hiddenCount() }} autres opérations.</p>
+            }
+          }
+        </div>
+      }
+    } @else {
+      <div class="rounded-xl border border-line bg-white">
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[44rem] text-left text-sm">
+            <thead class="text-muted">
+              <tr>
+                <th scope="col" class="px-4 py-2 font-semibold">Date</th>
+                <th scope="col" class="px-2 py-2 font-semibold">Libellé de la banque</th>
+                <th scope="col" class="px-2 py-2 font-semibold">Sortie (FCFA)</th>
+                <th scope="col" class="px-2 py-2 font-semibold">Entrée (FCFA)</th>
+                <th scope="col" class="px-2 py-2"><span class="sr-only">Retirer</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of store.manualRows(); track row.id; let i = $index) {
+                <tr class="border-t border-line align-top">
+                  <td class="px-4 py-2">
+                    <input
+                      type="date"
+                      class="w-full rounded-lg border border-line bg-white px-2.5 py-2 focus:border-brand-600"
+                      [attr.aria-label]="'Date de la ligne ' + (i + 1)"
+                      [value]="row.date"
+                      (input)="onRow(row.id, 'date', $event)"
+                    />
+                  </td>
+                  <td class="px-2 py-2">
+                    <input
+                      type="text"
+                      autocomplete="off"
+                      class="w-full rounded-lg border border-line bg-white px-2.5 py-2 focus:border-brand-600"
+                      [attr.aria-label]="'Libellé de la ligne ' + (i + 1)"
+                      [value]="row.libelle"
+                      (input)="onRow(row.id, 'libelle', $event)"
+                    />
+                  </td>
+                  <td class="px-2 py-2">
+                    <input
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      class="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-right focus:border-brand-600"
+                      [attr.aria-label]="'Sortie de la ligne ' + (i + 1)"
+                      [value]="row.sortie"
+                      (input)="onRow(row.id, 'sortie', $event)"
+                    />
+                  </td>
+                  <td class="px-2 py-2">
+                    <input
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      class="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-right focus:border-brand-600"
+                      [attr.aria-label]="'Entrée de la ligne ' + (i + 1)"
+                      [value]="row.entree"
+                      (input)="onRow(row.id, 'entree', $event)"
+                    />
+                  </td>
+                  <td class="px-2 py-2 text-right">
+                    <button
+                      type="button"
+                      class="btn btn-link btn-sm text-bad"
+                      [attr.aria-label]="'Retirer la ligne ' + (i + 1)"
+                      (click)="store.removeManualRow(row.id)"
+                    >
+                      <app-icon name="close" />
+                    </button>
+                  </td>
+                </tr>
+                @if (manualError(row); as msg) {
+                  <tr>
+                    <td colspan="5" class="px-4 pb-2 text-sm text-bad">Ligne {{ i + 1 }} : {{ msg }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="flex flex-col gap-2 border-t border-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <button type="button" class="btn btn-quiet btn-sm w-full sm:w-auto" (click)="store.addManualRow()">
+            <app-icon name="plus" /> Ajouter une opération
+          </button>
+          <p class="text-sm text-muted">Sortie = argent qui quitte le compte · Entrée = argent qui arrive.</p>
+        </div>
+      </div>
+    }
+  </section>
+
+  @if (showControl()) {
+    <section aria-labelledby="bank-controle" class="rounded-xl border border-line bg-canvas px-5 py-4">
+      <h3 id="bank-controle" class="mb-3 text-base font-semibold">Contrôle du relevé</h3>
+      <dl class="grid gap-x-8 gap-y-1.5 text-sm sm:grid-cols-2">
+        <div class="flex justify-between gap-4"><dt class="text-muted">Solde initial</dt><dd class="font-semibold">{{ fmt(check().soldeInitial ?? 0) }}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-muted">Entrées ({{ store.importOps().length }} opérations)</dt><dd class="font-semibold text-ok">+{{ fmt(check().totalEntrees) }}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-muted">Sorties</dt><dd class="font-semibold">−{{ fmt(check().totalSorties) }}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-muted">Solde calculé</dt><dd class="font-semibold">{{ fmt(check().calculatedFinal ?? 0) }}</dd></div>
+      </dl>
+      @if (check().balanced) {
+        <p class="mt-3 flex items-center gap-2 text-sm font-semibold text-ok">
+          <app-icon name="check" /> Le solde final indiqué correspond aux opérations.
+        </p>
+      } @else {
+        <p class="mt-3 flex items-start gap-2 text-sm font-semibold text-bad" role="alert">
+          <app-icon name="alert" class="mt-0.5 flex-none" /> Le solde calculé ne correspond pas au solde final indiqué.
+        </p>
+      }
+    </section>
+  }
+
+  @if (store.touched() && store.importBlockers().length > 0) {
+    <div class="rounded-lg border border-bad/30 bg-bad-bg px-4 py-3.5" role="alert">
+      <p class="mb-1 text-sm font-semibold text-bad">Le relevé ne peut pas encore être importé</p>
+      <ul class="list-disc pl-5 text-sm text-bad">
+        @for (issue of store.importBlockers(); track $index) {
+          <li>{{ issue }}</li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (check().warnings.length > 0) {
+    <div class="flex items-start gap-3 rounded-lg border border-warn-mark/60 bg-warn-bg px-4 py-3" role="note">
+      <app-icon name="alert" class="mt-0.5 flex-none text-warn" />
+      <ul class="text-sm text-warn">
+        @for (w of check().warnings; track $index) {
+          <li>{{ w }}</li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (store.duplicate(); as dup) {
+    <div class="rounded-lg border border-warn-mark bg-warn-bg px-5 py-4" role="alert">
+      <p class="font-semibold text-warn">Ce relevé semble déjà importé</p>
+      <p class="mt-1 text-sm text-warn">
+        Un relevé du {{ date(dup.debut) }} au {{ date(dup.fin) }} existe déjà pour ce compte
+        ({{ dup.statut === 'cloture' ? 'clôturé' : 'en cours' }}). L'importer une seconde fois créerait des doublons.
+      </p>
+      <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+        @if (dup.statut === 'en-cours') {
+          <button type="button" class="btn btn-primary btn-sm" (click)="store.resume(dup.id)">Reprendre le relevé existant</button>
+        } @else {
+          <button type="button" class="btn btn-primary btn-sm" (click)="store.viewClosed(dup.id)">Consulter le relevé existant</button>
+        }
+        <button type="button" class="btn btn-quiet btn-sm" (click)="store.importAnyway()">Ce n'est pas un doublon : importer quand même</button>
+        <button type="button" class="btn btn-link btn-sm" (click)="store.dismissDuplicate()">Modifier mes informations</button>
+      </div>
+    </div>
+  }
+
+  @if (store.closedRows().length > 0) {
+    <section aria-labelledby="bank-clotures">
+      <h3 id="bank-clotures" class="mb-3 text-base font-semibold">Relevés clôturés</h3>
+      <ul class="divide-y divide-line rounded-xl border border-line bg-white">
+        @for (row of store.closedRows(); track row.statement.id) {
+          <li class="flex flex-col gap-2 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0">
+              <p class="font-semibold">{{ row.label }} <span class="font-normal text-muted">· {{ row.account }}</span></p>
+              <p class="text-sm text-muted">
+                {{ row.progress.matched }} rapprochées · {{ row.progress.investigate }} à investiguer
+                @if (row.statement.clotureLe) {
+                  · clôturé le {{ date(row.statement.clotureLe) }}
+                }
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="badge badge-locked"><app-icon name="lock" class="text-[0.85em]" /> Clôturé</span>
+              <button type="button" class="btn btn-quiet btn-sm" (click)="store.viewClosed(row.statement.id)">
+                <app-icon name="eye" /> Consulter
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</div>

@@ -1,0 +1,75 @@
+<div class="mx-auto max-w-4xl">
+  <a routerLink="/" class="btn btn-link mb-3 inline-flex items-center gap-1.5 px-0">
+    <app-icon name="arrow-right" class="rotate-180 text-[0.9em]" /> Retour au tableau de bord
+  </a>
+
+  <header class="mb-6">
+    <p class="mb-1 text-sm text-muted">Trésorerie &amp; banque › Lettrage</p>
+    <h1 class="text-2xl">Lettrage d'un règlement</h1>
+    @if (store.currentStep() !== 4) {
+      <p class="mt-1 text-ink-2">Étape {{ store.currentStep() }} sur {{ store.steps.length }} : {{ currentLabel() }}</p>
+    } @else {
+      <p class="mt-1 text-ink-2">Opération terminée.</p>
+    }
+  </header>
+
+  <app-wizard-progress
+    class="mb-8 block"
+    listLabel="Étapes du lettrage"
+    [steps]="store.steps"
+    [current]="progressCurrent()"
+    [furthest]="progressFurthest()"
+    (stepClick)="goToStep($event)"
+  />
+
+  @switch (store.currentStep()) {
+    @case (1) {
+      <div class="panel">
+        <app-lettrage-step-tiers />
+
+        <div class="mt-8 flex items-center justify-between border-t border-line pt-5">
+          <button type="button" class="btn btn-quiet" (click)="goToDashboard()">Annuler</button>
+          <button type="button" class="btn btn-primary" (click)="next()">
+            Suivant <app-icon name="arrow-right" />
+          </button>
+        </div>
+      </div>
+    }
+    @case (2) {
+      <div class="panel">
+        <app-lettrage-step-lignes />
+
+        <div class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
+          <button type="button" class="btn btn-quiet" (click)="back()">
+            <app-icon name="arrow-right" class="rotate-180" /> Précédent
+          </button>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button type="button" class="btn btn-link" (click)="goToDashboard()">Annuler</button>
+            @switch (store.match().state) {
+              @case ('exact') {
+                <button type="button" class="btn bg-ok text-white hover:brightness-95" (click)="letter()">
+                  <app-icon name="check" /> Lettrer
+                </button>
+              }
+              @case ('partial') {
+                <button type="button" class="btn btn-primary" (click)="letter()">Lettrer partiellement</button>
+              }
+              @default {
+                <button type="button" class="btn btn-primary disabled:cursor-not-allowed disabled:opacity-40" disabled>
+                  Lettrer
+                </button>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    }
+    @case (3) {
+      <app-lettrage-step-confirm (cancelled)="cancelConfirm()" (confirmed)="confirmPartial()" />
+    }
+    @case (4) {
+      <app-lettrage-step-result (another)="another()" (changeTiers)="changeTiers()" (goDashboard)="goToDashboard()" />
+    }
+  }
+</div>

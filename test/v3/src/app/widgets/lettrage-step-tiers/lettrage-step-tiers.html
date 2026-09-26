@@ -1,0 +1,88 @@
+<div class="grid gap-6">
+  <div>
+    <h2 class="panel-title mb-1">Sélection du tiers</h2>
+    <p class="panel-sub">
+      Le lettrage associe un règlement à sa facture pour solder ce que le tiers doit. Commencez par choisir le client
+      ou le fournisseur concerné.
+    </p>
+  </div>
+
+  <div class="relative">
+    <label class="mb-1.5 block text-sm font-semibold" for="tiers-lettrage">Tiers <span class="text-bad">*</span></label>
+    <button
+      type="button"
+      id="tiers-lettrage"
+      class="flex w-full items-center gap-2.5 rounded-lg border bg-white px-3 py-2.5 text-left"
+      [class]="showError() ? 'border-bad' : 'border-line hover:border-brand-300'"
+      aria-haspopup="listbox"
+      [attr.aria-expanded]="menuOpen()"
+      (click)="toggleMenu()"
+    >
+      <app-icon name="users" class="flex-none text-muted" />
+      <span class="min-w-0 flex-1 truncate" [class.text-muted]="!store.selectedTiers()">
+        {{ store.selectedTiers()?.name ?? 'Sélectionner un tiers' }}
+      </span>
+      <app-icon name="chevron" class="flex-none" />
+    </button>
+
+    @if (menuOpen()) {
+      <div class="absolute z-10 mt-1.5 w-full rounded-xl border border-line bg-white p-2 shadow-[0_12px_32px_rgba(42,10,71,0.16)]">
+        <label class="mb-2 flex items-center gap-2 rounded-lg border border-line px-2.5 py-1.5 focus-within:border-brand-600">
+          <app-icon name="search" class="flex-none text-muted" />
+          <span class="sr-only">Rechercher un tiers</span>
+          <input
+            type="text"
+            class="w-full min-w-0 bg-transparent text-sm outline-none"
+            placeholder="Nom ou numéro de compte"
+            [value]="query()"
+            (input)="query.set($any($event.target).value)"
+          />
+        </label>
+        <ul class="max-h-60 overflow-y-auto" role="listbox" aria-label="Tiers disponibles">
+          @for (s of filtered(); track s.tiers.id) {
+            <li
+              role="option"
+              tabindex="0"
+              class="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-brand-50 focus-visible:bg-brand-50"
+              [class.bg-brand-100]="s.tiers.id === store.tiersId()"
+              [attr.aria-selected]="s.tiers.id === store.tiersId()"
+              (click)="pick(s.tiers.id)"
+              (keydown.enter)="pick(s.tiers.id)"
+            >
+              <span class="min-w-0">
+                <strong class="block truncate text-sm">{{ s.tiers.name }}</strong>
+                <small class="text-muted">{{ s.tiers.code }} · {{ kindLabel(s.tiers.kind) }}</small>
+              </span>
+              @if (s.openCount > 0) {
+                <span class="badge flex-none bg-brand-100 text-brand-800">
+                  {{ s.openCount }} ligne{{ s.openCount > 1 ? 's' : '' }} en attente
+                </span>
+              } @else {
+                <span class="flex-none text-[0.8125rem] text-muted">Rien en attente</span>
+              }
+            </li>
+          } @empty {
+            <li class="px-3 py-4 text-center text-sm text-ink-2">
+              Aucun tiers ne correspond à cette recherche. Vérifiez le nom ou le numéro de compte.
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (showError()) {
+      <p class="mt-1.5 text-sm text-bad">Choisissez le tiers dont vous voulez lettrer les lignes.</p>
+    }
+  </div>
+
+  @if (store.selectedTiers(); as tiers) {
+    <p class="rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-800">
+      <strong class="font-semibold">{{ tiers.name }}</strong> ({{ tiers.code }}) :
+      @if (store.openLines().length > 0) {
+        {{ store.openLines().length }} ligne{{ store.openLines().length > 1 ? 's' : '' }} en attente de lettrage.
+      } @else {
+        aucune ligne en attente de lettrage.
+      }
+    </p>
+  }
+</div>

@@ -1,0 +1,56 @@
+<div class="grid gap-6">
+  <div>
+    <h2 class="panel-title mb-1">Exercice comptable</h2>
+    <p class="panel-sub">Le premier exercice s'ouvrira automatiquement dès la validation du dossier.</p>
+  </div>
+
+  <form [formGroup]="group" class="grid gap-6 sm:grid-cols-2">
+    <div>
+      <label class="mb-1.5 block text-sm font-semibold" for="debut">Date de début <span class="text-bad">*</span></label>
+      <input
+        id="debut"
+        type="date"
+        formControlName="debut"
+        class="w-full rounded-lg border bg-white px-3 py-2.5"
+        [class]="group.controls.debut.invalid && group.controls.debut.touched ? 'border-bad' : 'border-line focus:border-brand-600'"
+        (change)="onDebutChange()"
+      />
+      @if (group.controls.debut.invalid && group.controls.debut.touched) {
+        <p class="mt-1.5 text-sm text-bad">Indiquez la date de début du premier exercice.</p>
+      }
+    </div>
+
+    <div>
+      <label class="mb-1.5 block text-sm font-semibold" for="fin">Date de fin <span class="text-bad">*</span></label>
+      <input
+        id="fin"
+        type="date"
+        formControlName="fin"
+        class="w-full rounded-lg border bg-white px-3 py-2.5"
+        [class]="group.controls.fin.invalid && group.controls.fin.touched ? 'border-bad' : 'border-line focus:border-brand-600'"
+      />
+      <p class="mt-1.5 text-sm text-muted">Pré-remplie à un an après le début, modifiable pour un exercice plus court.</p>
+      @if (group.controls.fin.invalid && group.controls.fin.touched) {
+        <p class="mt-1 text-sm text-bad">Indiquez la date de fin du premier exercice.</p>
+      }
+    </div>
+
+    <div class="sm:col-span-2">
+      <label class="mb-1.5 block text-sm font-semibold" for="mois">Mois de début d'exercice <span class="text-bad">*</span></label>
+      <select
+        id="mois"
+        formControlName="moisDebut"
+        class="w-full max-w-xs rounded-lg border bg-white px-3 py-2.5"
+        [class]="group.controls.moisDebut.invalid && group.controls.moisDebut.touched ? 'border-bad' : 'border-line focus:border-brand-600'"
+      >
+        <option value="" disabled>Choisir un mois</option>
+        @for (m of months; track m.id) {
+          <option [value]="m.id">{{ m.label }}</option>
+        }
+      </select>
+      @if (group.controls.moisDebut.invalid && group.controls.moisDebut.touched) {
+        <p class="mt-1.5 text-sm text-bad">Choisissez le mois de début d'exercice.</p>
+      }
+    </div>
+  </form>
+</div>

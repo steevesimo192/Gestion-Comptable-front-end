@@ -1,0 +1,22 @@
+<section class="panel" aria-labelledby="audit-title">
+  <div class="panel-head">
+    <div>
+      <h3 id="audit-title" class="panel-title">Qui a fait quoi</h3>
+      <p class="panel-sub">Activité récente sur ce dossier</p>
+    </div>
+    <button type="button" class="btn btn-link">Journal complet</button>
+  </div>
+
+  <ol class="border-l-2 border-brand-100 pl-4">
+    @for (a of items(); track $index) {
+      <li
+        class="relative pb-4 pl-1 before:absolute before:top-1.5 before:-left-[22px] before:size-2.5 before:rounded-full before:border-2 before:border-brand-600 before:bg-white before:content-[''] last:pb-0"
+      >
+        <p class="leading-snug">
+          <strong class="font-semibold">{{ a.who }}</strong> {{ a.what }}
+        </p>
+        <time class="text-[0.8125rem] text-muted">{{ a.when }}</time>
+      </li>
+    }
+  </ol>
+</section>

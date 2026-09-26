@@ -1,0 +1,78 @@
+<div class="mx-auto max-w-4xl">
+  <a routerLink="/" class="btn btn-link mb-3 inline-flex items-center gap-1.5 px-0">
+    <app-icon name="arrow-right" class="rotate-180 text-[0.9em]" /> Retour au tableau de bord
+  </a>
+
+  <header class="mb-6">
+    <h1 class="text-2xl">Nouvelle écriture comptable</h1>
+    @if (!store.submitted()) {
+      <p class="mt-1 text-ink-2">Étape {{ store.currentStep() }} sur {{ store.steps.length }} — {{ currentLabel() }}</p>
+    } @else {
+      <p class="mt-1 text-ink-2">C'est fait. Vous pouvez continuer votre journée de saisie.</p>
+    }
+  </header>
+
+  @if (store.hasDraft() && !store.submitted() && store.currentStep() === 1) {
+    <div class="panel mb-6 flex flex-wrap items-center justify-between gap-3 border-brand-200 bg-brand-50">
+      <p class="text-sm text-brand-800">
+        <strong class="font-semibold">Brouillon trouvé.</strong> Une écriture inachevée avait été conservée. Voulez-vous la reprendre ?
+      </p>
+      <div class="flex flex-none gap-2">
+        <button type="button" class="btn btn-quiet" (click)="discardDraft()">Repartir de zéro</button>
+        <button type="button" class="btn btn-primary" (click)="useDraft()">Reprendre le brouillon</button>
+      </div>
+    </div>
+  }
+
+  @if (!store.submitted()) {
+    <app-wizard-progress
+      class="mb-8 block"
+      [steps]="store.steps"
+      [current]="store.currentStep()"
+      [furthest]="store.currentStep()"
+      (stepClick)="goToStep($event)"
+    />
+
+    <div class="panel">
+      @switch (store.currentStep()) {
+        @case (1) {
+          <app-entry-step-info />
+
+          <div class="mt-8 flex items-center justify-end border-t border-line pt-5">
+            <button type="button" class="btn btn-primary" (click)="next()">
+              Suivant <app-icon name="arrow-right" />
+            </button>
+          </div>
+        }
+        @case (2) {
+          <app-entry-step-lines />
+
+          <div class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
+            <button type="button" class="btn btn-quiet" (click)="back()">
+              <app-icon name="arrow-right" class="rotate-180" /> Précédent
+            </button>
+
+            <div class="flex flex-wrap items-center gap-3">
+              <button type="button" class="btn btn-link" (click)="goToDashboard()">Annuler</button>
+              <button type="button" class="btn btn-quiet" [disabled]="!store.canSaveDraft()" (click)="saveDraft()">
+                Enregistrer en brouillon
+              </button>
+              <button type="button" class="btn btn-primary disabled:cursor-not-allowed disabled:opacity-40" [disabled]="!store.canPost()" (click)="postRequest()">
+                Comptabiliser
+              </button>
+            </div>
+          </div>
+        }
+        @case (3) {
+          <app-entry-step-confirm (cancelled)="cancelConfirm()" (confirmed)="confirmPost()" />
+        }
+      }
+    </div>
+  } @else {
+    <app-entry-step-result
+      (viewEntry)="viewEntry()"
+      (newEntry)="startAnother()"
+      (goDashboard)="goToDashboard()"
+    />
+  }
+</div>

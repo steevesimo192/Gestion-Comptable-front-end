@@ -1,0 +1,22 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Icon } from './icon';
+
+describe('Icon', () => {
+  let fixture: ComponentFixture<Icon>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [Icon] }).compileComponents();
+    fixture = TestBed.createComponent(Icon);
+    fixture.componentRef.setInput('name', 'check');
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(fixture.componentInstance).toBeTruthy();
+  });
+
+  it('should draw the requested icon', () => {
+    const path = (fixture.nativeElement as HTMLElement).querySelector('path');
+    expect(path?.getAttribute('d')).toContain('M5 12');
+  });
+});

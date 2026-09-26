@@ -1,0 +1,42 @@
+<section class="panel" aria-labelledby="aging-title">
+  <div class="panel-head">
+    <div>
+      <h3 id="aging-title" class="panel-title">Qui vous doit, à qui vous devez</h3>
+      <p class="panel-sub">Montants restant à régler, classés par retard</p>
+    </div>
+    <button type="button" class="btn btn-link">Voir les tiers</button>
+  </div>
+
+  @for (block of blocks(); track block.data.title) {
+    <div class="not-first:mt-[22px] not-first:border-t not-first:border-line not-first:pt-[22px]">
+      <div class="mb-2.5 flex items-baseline justify-between gap-3">
+        <h4 class="font-sans text-[0.95rem] font-semibold">{{ block.data.title }}</h4>
+        <strong class="font-display text-[1.15rem]">{{ block.data.total | fcfa }}</strong>
+      </div>
+
+      <div
+        class="flex h-3.5 gap-0.5 overflow-hidden rounded-[7px]"
+        role="img"
+        [attr.aria-label]="block.data.title + ' : ' + block.latePct + ' % en retard'"
+      >
+        @for (b of block.segments; track b.label) {
+          <span class="min-w-1" [class]="b.color" [style.flex-grow]="b.amount"></span>
+        }
+      </div>
+
+      <ul class="mt-3 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-x-4 gap-y-2">
+        @for (b of block.segments; track b.label) {
+          <li class="grid grid-cols-[auto_1fr] items-center gap-x-2 text-[0.8125rem]">
+            <span class="row-span-2 size-2.5 rounded-[3px]" [class]="b.color"></span>
+            <span class="text-muted">{{ b.label }}</span>
+            <span class="text-[0.9rem] font-semibold">{{ b.amount | fcfa: 'short' }}</span>
+          </li>
+        }
+      </ul>
+
+      <p class="mt-2.5 text-sm text-ink-2">
+        {{ block.latePct }} % de ce montant est en retard, soit {{ block.data.late | fcfa }}.
+      </p>
+    </div>
+  }
+</section>

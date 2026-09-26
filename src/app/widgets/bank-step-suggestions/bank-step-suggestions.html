@@ -1,0 +1,133 @@
+<div class="grid gap-6">
+  <div>
+    <h2 class="panel-title mb-1">Suggestions automatiques</h2>
+    <p class="panel-sub">
+      Pour chaque opération du relevé, nous cherchons l'écriture de même montant, à une date proche.
+    </p>
+  </div>
+
+  <div>
+    <div class="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
+      <span class="font-semibold">{{ store.progress().treated }} / {{ store.progress().total }} opérations traitées</span>
+      <span class="text-muted">{{ store.progress().remaining }} à traiter</span>
+    </div>
+    <div
+      class="h-2 overflow-hidden rounded-full bg-brand-100"
+      role="progressbar"
+      aria-label="Avancement du rapprochement"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      [attr.aria-valuenow]="percent()"
+    >
+      <div class="h-full rounded-full bg-brand-600 transition-all" [style.width.%]="percent()"></div>
+    </div>
+  </div>
+
+  @if (feedback(); as message) {
+    <p class="flex items-center gap-2 rounded-lg bg-ok-bg px-4 py-2.5 text-sm font-semibold text-ok" role="status">
+      <app-icon name="check" /> {{ message }}
+    </p>
+  }
+
+  @if (store.suggestions().length > 0) {
+    <div class="flex items-start gap-3 rounded-lg border border-ok/30 bg-ok-bg px-4 py-3.5">
+      <app-icon name="spark" class="mt-0.5 flex-none text-ok" />
+      <p class="text-sm text-ok">
+        <strong>{{ store.suggestions().length }} suggestion{{ store.suggestions().length > 1 ? 's' : '' }} trouvée{{ store.suggestions().length > 1 ? 's' : '' }}</strong>
+        — validez-les en un clic, ou vérifiez celles qui ont un doute.
+      </p>
+    </div>
+  } @else {
+    <div class="flex items-start gap-3 rounded-lg border border-line bg-canvas px-4 py-3.5">
+      <app-icon name="info" class="mt-0.5 flex-none text-brand-700" />
+      <p class="text-sm text-ink-2">
+        @if (store.progress().remaining > 0) {
+          Aucune suggestion pour les {{ store.progress().remaining }} opérations restantes : passez au rapprochement manuel.
+        } @else {
+          Toutes les opérations sont traitées : vous pouvez passer au récapitulatif.
+        }
+      </p>
+    </div>
+  }
+
+  @if (safeRows().length > 0) {
+    <section aria-labelledby="sugg-sures" class="rounded-xl border border-line bg-white">
+      <div class="flex flex-col gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 id="sugg-sures" class="text-base font-semibold">Correspondances sûres ({{ safeRows().length }})</h3>
+          <p class="text-sm text-muted">Même montant, dates proches, pas d'autre candidate.</p>
+        </div>
+        <button type="button" class="btn btn-success w-full sm:w-auto" (click)="validateAll()">
+          <app-icon name="check" /> Valider les {{ safeRows().length }} correspondances
+        </button>
+      </div>
+      <ul class="divide-y divide-line">
+        @for (row of safeRows(); track row.op.id) {
+          <li class="grid gap-3 px-5 py-3.5 sm:grid-cols-[1fr_auto_1fr_auto] sm:items-center">
+            <div class="min-w-0 text-sm">
+              <p class="text-xs font-semibold tracking-wide text-muted uppercase">Relevé · {{ date(row.op.date) }}</p>
+              <p class="truncate font-semibold">{{ row.op.libelle }}</p>
+              <p class="font-semibold" [class]="row.op.montant > 0 ? 'text-ok' : ''">{{ fmtSigned(row.op.montant) }}</p>
+            </div>
+            <app-icon name="swap" class="hidden text-muted sm:block" />
+            <div class="min-w-0 text-sm">
+              <p class="text-xs font-semibold tracking-wide text-muted uppercase">
+                Écriture {{ row.entry.reference }} · {{ date(row.entry.date) }}
+              </p>
+              <p class="truncate font-semibold">{{ row.entry.libelle }}</p>
+              <p class="text-muted">{{ row.suggestion.reason }}</p>
+            </div>
+            <div class="flex items-center gap-2 sm:justify-end">
+              <button type="button" class="btn btn-link btn-sm" (click)="reject(row.op.id)">Ignorer</button>
+              <button type="button" class="btn btn-success btn-sm" (click)="validate(row.op.id)">Valider</button>
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (reviewRows().length > 0) {
+    <section aria-labelledby="sugg-verifier" class="rounded-xl border border-warn-mark/60 bg-white">
+      <div class="border-b border-line px-5 py-4">
+        <h3 id="sugg-verifier" class="text-base font-semibold">À vérifier ({{ reviewRows().length }})</h3>
+        <p class="text-sm text-muted">Le montant correspond, mais il y a un doute : contrôlez avant de valider.</p>
+      </div>
+      <ul class="divide-y divide-line">
+        @for (row of reviewRows(); track row.op.id) {
+          <li class="grid gap-3 px-5 py-3.5 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+            <div class="min-w-0 text-sm">
+              <p class="text-xs font-semibold tracking-wide text-muted uppercase">Relevé · {{ date(row.op.date) }}</p>
+              <p class="truncate font-semibold">{{ row.op.libelle }}</p>
+              <p class="font-semibold" [class]="row.op.montant > 0 ? 'text-ok' : ''">{{ fmtSigned(row.op.montant) }}</p>
+            </div>
+            <app-icon name="swap" class="hidden text-muted sm:block" />
+            <div class="min-w-0 text-sm">
+              <p class="text-xs font-semibold tracking-wide text-muted uppercase">
+                Écriture {{ row.entry.reference }} · {{ date(row.entry.date) }}
+              </p>
+              <p class="truncate font-semibold">{{ row.entry.libelle }}</p>
+              <p class="text-warn">{{ row.suggestion.reason }}</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 sm:col-span-3 sm:justify-end">
+              <button type="button" class="btn btn-link btn-sm" (click)="reject(row.op.id)">Ignorer</button>
+              <button type="button" class="btn btn-quiet btn-sm" (click)="store.reviewManually(row.op.id)">
+                Choisir moi-même
+              </button>
+              <button type="button" class="btn btn-success btn-sm" (click)="validate(row.op.id)">
+                <app-icon name="check" /> Valider
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (store.rejectedCount() > 0) {
+    <p class="text-sm text-muted">
+      {{ store.rejectedCount() }} suggestion{{ store.rejectedCount() > 1 ? 's ignorées' : ' ignorée' }} —
+      <button type="button" class="btn btn-link btn-sm" (click)="restore()">les revoir</button>
+    </p>
+  }
+</div>

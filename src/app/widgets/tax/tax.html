@@ -1,0 +1,29 @@
+<section class="panel" aria-labelledby="tax-title">
+  <div class="panel-head">
+    <div>
+      <h3 id="tax-title" class="panel-title">{{ tax().name }} de {{ tax().period }}</h3>
+      <p class="panel-sub">À déposer avant le {{ tax().dueDate }}</p>
+    </div>
+    <span class="badge badge-draft">{{ tax().status }}</span>
+  </div>
+
+  <dl>
+    <div class="flex justify-between gap-4 pb-3">
+      <dt class="text-ink-2">{{ tax().name }} collectée sur vos ventes</dt>
+      <dd class="font-semibold whitespace-nowrap">{{ tax().collected | fcfa }}</dd>
+    </div>
+    <div class="flex justify-between gap-4 border-t border-line py-3">
+      <dt class="text-ink-2">{{ tax().name }} déductible sur vos achats</dt>
+      <dd class="font-medium whitespace-nowrap text-ink-2">− {{ tax().deductible | fcfa }}</dd>
+    </div>
+    <div class="mt-1 flex justify-between gap-4 border-t-2 border-brand-900 pt-3.5">
+      <dt class="font-bold">{{ tax().name }} à payer</dt>
+      <dd class="font-display text-[1.35rem] font-bold whitespace-nowrap text-brand-800">{{ due() | fcfa }}</dd>
+    </div>
+  </dl>
+
+  <div class="mt-[18px] flex flex-col items-start gap-3">
+    <p class="text-sm text-muted">Dernière déclaration : {{ tax().lastFiled }}.</p>
+    <button type="button" class="btn btn-primary">Relire la déclaration</button>
+  </div>
+</section>

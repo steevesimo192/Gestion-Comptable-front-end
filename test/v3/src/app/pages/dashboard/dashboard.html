@@ -1,0 +1,93 @@
+<!-- En-tête : où suis-je, que puis-je faire ici -->
+<header class="mb-4 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <h1 class="text-[length:clamp(1.6rem,3vw,2.1rem)]">Vue d'ensemble</h1>
+    <p class="mt-1 text-ink-2">
+      Bonjour {{ store.user().first }}, voici où en est
+      <strong class="font-semibold text-ink">{{ d().dossier.name }}</strong> ce lundi 21 septembre 2026.
+    </p>
+  </div>
+  <a routerLink="/dossiers/nouveau" class="btn btn-primary px-4 py-2.5">
+    <app-icon name="plus" />
+    Nouveau dossier comptable
+  </a>
+</header>
+
+<!-- Sommaire de la page -->
+<nav class="mb-6 flex flex-wrap items-center gap-2" aria-label="Sections du tableau de bord">
+  <span class="mr-1 text-sm text-muted">Aller à</span>
+  @for (s of sections(); track s.id) {
+    <a
+      [href]="'#' + s.id"
+      class="rounded-full border border-line bg-white px-3 py-1 text-sm font-medium text-brand-800 no-underline hover:border-brand-300 hover:bg-brand-50"
+    >
+      {{ s.label }}
+    </a>
+  }
+  <span class="ml-auto rounded-full bg-brand-100 px-3 py-0.5 text-[0.8125rem] font-semibold text-brand-800">
+    Données fictives de démonstration
+  </span>
+</nav>
+
+<!-- 1. Les chiffres clés -->
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+  @for (k of d().kpis; track k.key) {
+    <app-kpi-card [kpi]="k" />
+  }
+</div>
+
+<!-- 2. Ce que je dois faire maintenant -->
+<section id="a-traiter" class="mt-10 scroll-mt-24" aria-labelledby="h-a-traiter">
+  <div class="mb-3.5">
+    <h2 id="h-a-traiter" class="text-xl">À traiter maintenant</h2>
+    <p class="text-sm text-muted">Commencez ici : ce qui est en retard ou proche de l'échéance.</p>
+  </div>
+  <div class="grid grid-cols-12 gap-5">
+    <app-alerts class="col-span-12 flex min-w-0 xl:col-span-8" [tasks]="d().tasks" [role]="store.role()" />
+    <app-shortcuts class="col-span-12 flex min-w-0 xl:col-span-4" [role]="store.role()" />
+  </div>
+</section>
+
+<!-- 3. Ma situation financière -->
+<section id="situation" class="mt-10 scroll-mt-24" aria-labelledby="h-situation">
+  <div class="mb-3.5">
+    <h2 id="h-situation" class="text-xl">Votre situation financière</h2>
+    <p class="text-sm text-muted">D'où vient l'argent, où il va, et qui vous doit quoi.</p>
+  </div>
+  <div class="grid grid-cols-12 gap-5">
+    <app-cashflow-chart class="col-span-12 flex min-w-0 xl:col-span-7" [points]="d().cashflow" />
+    <app-aging class="col-span-12 flex min-w-0 xl:col-span-5" [receivables]="d().receivables" [payables]="d().payables" />
+  </div>
+</section>
+
+<!-- 4. Suivi de la période -->
+<section id="suivi" class="mt-10 scroll-mt-24" aria-labelledby="h-suivi">
+  <div class="mb-3.5">
+    <h2 id="h-suivi" class="text-xl">Suivi de la période</h2>
+    <p class="text-sm text-muted">Budget, obligations fiscales et clôture de {{ d().closing.periodLabel }}.</p>
+  </div>
+  <div class="grid grid-cols-12 gap-5">
+    <app-budget class="col-span-12 flex min-w-0 xl:col-span-7" [budget]="d().budget" [elapsedShare]="d().elapsedShare" />
+
+    <div class="col-span-12 flex min-w-0 flex-col gap-5 xl:col-span-5">
+      <app-tax class="flex" [tax]="d().tax" />
+      @if (isAccountant()) {
+        <app-closing class="flex" [closing]="d().closing" />
+      }
+    </div>
+  </div>
+</section>
+
+<!-- 5. Historique et contrôle (vue comptable) -->
+@if (isAccountant()) {
+  <section id="historique" class="mt-10 scroll-mt-24" aria-labelledby="h-historique">
+    <div class="mb-3.5">
+      <h2 id="h-historique" class="text-xl">Historique et contrôle</h2>
+      <p class="text-sm text-muted">Ce qui a été saisi récemment, et par qui.</p>
+    </div>
+    <div class="grid grid-cols-12 gap-5">
+      <app-entries class="col-span-12 xl:col-span-8" [entries]="d().entries" />
+      <app-audit class="col-span-12 xl:col-span-4" [items]="d().audit" />
+    </div>
+  </section>
+}

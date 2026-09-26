@@ -1,0 +1,112 @@
+@if (summary(); as s) {
+  <div class="grid gap-6">
+    <div class="rounded-xl border border-ok/40 bg-ok-bg px-6 py-8 text-center" role="status">
+      <span class="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-ok text-white">
+        <app-icon name="check" class="text-xl" />
+      </span>
+      <h2 class="text-xl font-semibold text-ok">Relevé rapproché</h2>
+      <p class="mt-1 text-ok">
+        @if (s.closedOn) {
+          Le rapprochement bancaire du {{ s.label.toLowerCase() }} a été clôturé le {{ date(s.closedOn) }}.
+        } @else {
+          Le rapprochement bancaire du {{ s.label.toLowerCase() }} a été clôturé.
+        }
+      </p>
+      <p class="mt-1 text-sm text-ok">{{ s.account }}</p>
+    </div>
+
+    <section aria-labelledby="res-bilan" class="rounded-xl border border-line bg-white px-5 py-4">
+      <h3 id="res-bilan" class="mb-4 text-base font-semibold">Bilan final</h3>
+      <div class="flex flex-wrap gap-2.5">
+        <span class="badge badge-ok">{{ s.progress.auto }} rapprochée{{ s.progress.auto > 1 ? 's' : '' }} automatiquement</span>
+        <span class="badge badge-posted">{{ s.progress.manuelle }} manuelle{{ s.progress.manuelle > 1 ? 's' : '' }}</span>
+        <span class="badge badge-draft">{{ s.progress.investigate }} écart{{ s.progress.investigate > 1 ? 's' : '' }} à investiguer</span>
+        @if (s.createdCount > 0) {
+          <span class="badge badge-locked">{{ s.createdCount }} écriture{{ s.createdCount > 1 ? 's' : '' }} créée{{ s.createdCount > 1 ? 's' : '' }}</span>
+        }
+      </div>
+      <p class="mt-4 text-sm">
+        Écart final :
+        <strong [class]="s.balances.gap === 0 ? 'text-ok' : 'text-warn'">{{ fmt(s.balances.gap) }}</strong>
+        <span class="text-muted"> · solde du relevé {{ fmt(s.balances.bank) }}, solde comptable {{ fmt(s.balances.book) }}</span>
+      </p>
+    </section>
+
+    @if (s.investigateOps.length > 0) {
+      <section aria-labelledby="res-ecarts" class="rounded-xl border border-line bg-white px-5 py-4">
+        <h3 id="res-ecarts" class="mb-3 text-base font-semibold">Écarts restants visibles au prochain cycle</h3>
+        <ul class="grid gap-2.5">
+          @for (o of s.investigateOps; track o.id) {
+            <li class="rounded-lg bg-warn-bg px-4 py-3 text-sm">
+              <div class="flex items-start justify-between gap-4">
+                <p class="flex min-w-0 items-start gap-2 font-semibold text-warn">
+                  <app-icon name="alert" class="mt-0.5 flex-none" />
+                  <span class="min-w-0">{{ date(o.date) }} · {{ o.libelle }}</span>
+                </p>
+                <p class="flex-none font-semibold whitespace-nowrap text-warn">{{ fmtSigned(o.montant) }}</p>
+              </div>
+              <p class="mt-1 pl-6 text-warn">{{ o.note }}</p>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (showDetail()) {
+      <section aria-labelledby="res-detail" class="rounded-xl border border-line bg-white">
+        <h3 id="res-detail" class="px-5 py-4 text-base font-semibold">Relevé rapproché</h3>
+        <div class="overflow-x-auto border-t border-line">
+          <table class="w-full min-w-[36rem] text-left text-sm">
+            <thead class="text-muted">
+              <tr>
+                <th scope="col" class="px-5 py-2 font-semibold">Date</th>
+                <th scope="col" class="px-3 py-2 font-semibold">Libellé</th>
+                <th scope="col" class="px-3 py-2 text-right font-semibold">Montant</th>
+                <th scope="col" class="px-5 py-2 font-semibold">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (o of store.operations(); track o.id) {
+                <tr class="border-t border-line">
+                  <td class="px-5 py-2 whitespace-nowrap">{{ date(o.date) }}</td>
+                  <td class="px-3 py-2">{{ o.libelle }}</td>
+                  <td class="px-3 py-2 text-right font-semibold whitespace-nowrap" [class]="o.montant > 0 ? 'text-ok' : ''">{{ fmtSigned(o.montant) }}</td>
+                  <td class="px-5 py-2">
+                    @if (o.statut === 'rapprochee') {
+                      <span class="badge badge-ok">Rapprochée · {{ o.mode === 'auto' ? 'auto' : 'manuelle' }}</span>
+                    } @else {
+                      <span class="badge badge-draft">À investiguer</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    @if (exportFailed()) {
+      <p class="rounded-lg border border-bad/30 bg-bad-bg px-4 py-3 text-sm font-semibold text-bad" role="alert">
+        Le téléchargement n'a pas pu démarrer. Réessayez, ou autorisez les téléchargements dans votre navigateur.
+      </p>
+    }
+
+    <div class="action-bar">
+      <button type="button" class="btn btn-link" (click)="goDashboard.emit()">
+        <app-icon name="arrow-right" class="rotate-180 text-[0.9em]" /> Retour au tableau de bord
+      </button>
+      <div class="action-group">
+        <button type="button" class="btn btn-quiet w-full sm:w-auto" [attr.aria-expanded]="showDetail()" (click)="toggleDetail()">
+          <app-icon name="eye" /> {{ showDetail() ? 'Masquer le relevé rapproché' : 'Voir le relevé rapproché' }}
+        </button>
+        <button type="button" class="btn btn-quiet w-full sm:w-auto" (click)="another.emit()">
+          <app-icon name="plus" /> Nouveau rapprochement
+        </button>
+        <button type="button" class="btn btn-primary w-full sm:w-auto" (click)="exportReport()">
+          <app-icon name="download" /> Exporter le rapport
+        </button>
+      </div>
+    </div>
+  </div>
+}

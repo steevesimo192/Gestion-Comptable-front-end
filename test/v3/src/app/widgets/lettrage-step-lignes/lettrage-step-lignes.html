@@ -1,0 +1,137 @@
+<div class="grid gap-5">
+  <div>
+    <h2 class="panel-title mb-1">Lignes non lettrées</h2>
+    <p class="panel-sub">
+      {{ store.selectedTiers()?.name }}. Cochez une ou plusieurs lignes de chaque côté : l'indicateur vous dit tout de
+      suite si le lettrage sera total ou partiel.
+    </p>
+  </div>
+
+  @if (store.error(); as message) {
+    <div class="flex items-start gap-3 rounded-lg border border-bad/30 bg-bad-bg px-4 py-3.5" role="alert">
+      <app-icon name="alert" class="mt-0.5 flex-none text-bad" />
+      <p class="text-sm font-semibold text-bad">{{ message }}</p>
+    </div>
+  }
+
+  @if (!store.hasOpenLines()) {
+    <div class="rounded-xl border border-dashed border-line bg-white px-6 py-10 text-center">
+      <p class="font-semibold">Rien à lettrer pour ce tiers</p>
+      <p class="mt-1 text-sm text-ink-2">Ce tiers n'a aucune facture ou paiement en attente de lettrage.</p>
+      <button type="button" class="btn btn-quiet mt-4" (click)="store.backToTiers()">Choisir un autre tiers</button>
+    </div>
+  } @else {
+    <div class="grid gap-4 md:grid-cols-2">
+      @for (panel of panels(); track panel.side) {
+        <section class="min-w-0 rounded-xl border border-line bg-white" [attr.aria-labelledby]="'panel-' + panel.side">
+          <div class="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+            <h3 [id]="'panel-' + panel.side" class="text-[0.95rem]">
+              {{ panel.title }}
+              <span class="ml-1 text-sm font-normal text-muted">({{ panel.lines.length }})</span>
+            </h3>
+            <button
+              type="button"
+              class="btn btn-link px-0 py-0 text-[0.8125rem] disabled:cursor-not-allowed disabled:opacity-40 disabled:no-underline"
+              [disabled]="panel.lines.length === 0"
+              (click)="toggleAll(panel)"
+            >
+              {{ panel.allSelected ? 'Tout décocher' : 'Tout cocher' }}
+            </button>
+          </div>
+
+          @if (panel.lines.length === 0) {
+            <p class="px-4 py-6 text-center text-sm text-ink-2">{{ panel.empty }}</p>
+          } @else {
+            <ul>
+              @for (l of panel.lines; track l.id) {
+                <li class="border-b border-line last:border-b-0">
+                  <label class="flex cursor-pointer items-start gap-3 px-4 py-3 transition-colors" [class]="rowClass(l.id)">
+                    <input
+                      type="checkbox"
+                      class="mt-1 size-4 flex-none accent-brand-600"
+                      [checked]="store.isSelected(l.id)"
+                      (change)="store.toggleLine(l.id)"
+                    />
+                    <span class="min-w-0 flex-1">
+                      <span class="flex items-baseline justify-between gap-3">
+                        <strong class="truncate text-sm">
+                          {{ l.reference }}
+                          @if (l.nature === 'Avoir') {
+                            <span class="ml-1.5 rounded bg-brand-100 px-1.5 py-0.5 text-[0.7rem] font-semibold text-brand-800">Avoir</span>
+                          }
+                        </strong>
+                        <span class="flex-none text-sm font-semibold">{{ l.restant | fcfa }}</span>
+                      </span>
+                      <span class="flex items-baseline justify-between gap-3 text-[0.8125rem] text-muted">
+                        <span class="truncate">{{ formatDate(l.date) }} · {{ l.libelle }}</span>
+                        @if (l.restant < l.montant) {
+                          <span class="flex-none">reste sur {{ l.montant | fcfa: 'plain' }}</span>
+                        }
+                      </span>
+                    </span>
+                  </label>
+                </li>
+              }
+            </ul>
+          }
+
+          <div class="flex items-center justify-between border-t border-line px-4 py-3 text-sm">
+            <span class="text-muted">
+              Total sélectionné
+              @if (panel.selectedCount > 0) {
+                ({{ panel.selectedCount }})
+              }
+            </span>
+            <strong>{{ panel.total | fcfa }}</strong>
+          </div>
+        </section>
+      }
+    </div>
+
+    <div aria-live="polite">
+      @switch (store.match().state) {
+        @case ('exact') {
+          <div class="flex items-start gap-3 rounded-lg border border-ok/30 bg-ok-bg px-4 py-4">
+            <span class="grid size-9 flex-none place-items-center rounded-full bg-ok text-white">
+              <app-icon name="check" />
+            </span>
+            <div>
+              <p class="font-semibold text-ok">Correspondance exacte : {{ store.match().lettrable | fcfa }}</p>
+              <p class="mt-0.5 text-sm text-ink-2">
+                Le lettrage sera total : les lignes cochées seront entièrement soldées.
+              </p>
+            </div>
+          </div>
+        }
+        @case ('partial') {
+          <div class="flex items-start gap-3 rounded-lg border border-warn-mark/40 bg-warn-bg px-4 py-4">
+            <span class="grid size-9 flex-none place-items-center rounded-full bg-warn-mark/30 text-warn">
+              <app-icon name="alert" />
+            </span>
+            <div>
+              <p class="font-semibold text-warn">
+                Lettrage partiel possible : {{ store.match().reste | fcfa }} resteront non lettrés
+              </p>
+              <p class="mt-0.5 text-sm text-ink-2">
+                Montant maximum lettrable : {{ store.match().lettrable | fcfa }}.
+                @if (store.match().resteSide === 'facture') {
+                  Le reste demeure dû sur les factures du tiers.
+                } @else {
+                  Le reste demeure disponible sur les paiements du tiers, en attente d'une facture.
+                }
+              </p>
+            </div>
+          </div>
+        }
+        @case ('incomplete') {
+          <p class="rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-800">{{ missingHint() }}</p>
+        }
+        @default {
+          <p class="rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-800">
+            Cochez au moins une facture et un paiement pour vérifier la correspondance.
+          </p>
+        }
+      }
+    </div>
+  }
+</div>

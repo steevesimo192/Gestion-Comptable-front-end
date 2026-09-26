@@ -1,0 +1,76 @@
+<section class="panel" aria-labelledby="cash-title">
+  <div class="panel-head">
+    <div>
+      <h3 id="cash-title" class="panel-title">Ce qui est entré et sorti</h3>
+      <p class="panel-sub">Encaissements et décaissements, d'avril à septembre</p>
+    </div>
+    <ul class="flex gap-4 text-sm text-ink-2">
+      <li class="flex items-center gap-1.5"><span class="size-3 rounded-[3px] bg-brand-600"></span>Encaissé</li>
+      <li class="flex items-center gap-1.5"><span class="size-3 rounded-[3px] bg-brand-300"></span>Dépensé</li>
+    </ul>
+  </div>
+
+  <div class="mb-2 flex flex-wrap gap-x-5 gap-y-1 rounded-lg bg-brand-50 px-3.5 py-2.5 text-sm text-ink-2" aria-live="polite">
+    <strong class="text-ink">{{ current().month }}{{ current().partial ? ' (en cours)' : '' }}</strong>
+    <span>Encaissé {{ current().inflow | fcfa }}</span>
+    <span>Dépensé {{ current().outflow | fcfa }}</span>
+    <span class="font-semibold" [class.text-ok]="gap() >= 0" [class.text-bad]="gap() < 0">
+      Écart {{ gap() >= 0 ? '+' : '' }}{{ gap() | fcfa }}
+    </span>
+  </div>
+
+  <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="block h-auto w-full" role="img" [attr.aria-label]="summary()">
+    @for (t of ticks(); track t.v) {
+      <line [attr.x1]="L" [attr.x2]="W - R" [attr.y1]="t.y" [attr.y2]="t.y" class="stroke-line" stroke-width="1" />
+      <text [attr.x]="L - 8" [attr.y]="t.y + 4" text-anchor="end" class="fill-muted text-xs">{{ t.label }}</text>
+    }
+
+    @for (b of bars(); track b.month; let i = $index) {
+      <g class="group cursor-default outline-none" tabindex="0" (mouseenter)="active.set(i)" (focus)="active.set(i)">
+        <rect
+          [attr.x]="b.x"
+          [attr.y]="T"
+          [attr.width]="b.band"
+          [attr.height]="H - T - B"
+          [class]="i === active() ? 'fill-brand-50' : 'fill-transparent group-focus-visible:fill-brand-50'"
+        />
+        <rect
+          [attr.x]="b.inX"
+          [attr.y]="b.inY"
+          [attr.width]="b.w"
+          [attr.height]="b.inH"
+          rx="3"
+          class="origin-bottom animate-grow fill-brand-600 [transform-box:fill-box] motion-reduce:animate-none"
+          [class.opacity-60]="b.partial"
+          [style.animation-delay.ms]="i * 60"
+        />
+        <rect
+          [attr.x]="b.outX"
+          [attr.y]="b.outY"
+          [attr.width]="b.w"
+          [attr.height]="b.outH"
+          rx="3"
+          class="origin-bottom animate-grow fill-brand-300 [transform-box:fill-box] motion-reduce:animate-none"
+          [class.opacity-60]="b.partial"
+          [style.animation-delay.ms]="i * 60 + 30"
+        />
+        <text
+          [attr.x]="b.x + b.band / 2"
+          [attr.y]="H - 10"
+          text-anchor="middle"
+          class="text-xs"
+          [class.fill-ink]="i === active()"
+          [class.font-bold]="i === active()"
+          [class.fill-muted]="i !== active()"
+        >
+          {{ b.month }}
+        </text>
+      </g>
+    }
+  </svg>
+
+  <p class="mt-1.5 text-[0.9rem] text-ink-2">
+    Depuis avril, vous avez encaissé <strong class="font-semibold text-ink">{{ totalIn() | fcfa }}</strong> et dépensé
+    <strong class="font-semibold text-ink">{{ totalOut() | fcfa }}</strong>.
+  </p>
+</section>

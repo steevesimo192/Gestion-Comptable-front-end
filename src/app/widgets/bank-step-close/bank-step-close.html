@@ -1,0 +1,71 @@
+<div class="grid gap-6">
+  <div>
+    <h2 class="panel-title mb-1">Clôture du rapprochement</h2>
+    <p class="panel-sub">{{ store.label() }} · {{ store.accountLabel() }}</p>
+  </div>
+
+  <div class="flex items-start gap-3 rounded-lg border border-warn-mark/60 bg-warn-bg px-4 py-3.5" role="note">
+    <app-icon name="lock" class="mt-0.5 flex-none text-warn" />
+    <p class="text-sm text-warn">
+      <strong>Dernière vérification.</strong> Une fois clôturé, ce rapprochement ne peut plus être modifié.
+    </p>
+  </div>
+
+  @if (store.balances(); as b) {
+    <section aria-labelledby="clo-verif" class="rounded-xl border border-line bg-white px-5 py-4">
+      <h3 id="clo-verif" class="mb-3 text-base font-semibold">Vérifications avant clôture</h3>
+      <ul class="grid gap-3 text-sm">
+        <li class="flex items-start gap-2.5">
+          <app-icon [name]="store.progress().remaining === 0 ? 'check' : 'alert'" class="mt-0.5 flex-none" [class]="store.progress().remaining === 0 ? 'text-ok' : 'text-bad'" />
+          <span>
+            Opérations traitées : <strong>{{ store.progress().treated }} / {{ store.progress().total }}</strong>
+          </span>
+        </li>
+        <li class="flex items-start gap-2.5">
+          <app-icon [name]="b.statementGap === 0 ? 'check' : 'alert'" class="mt-0.5 flex-none" [class]="b.statementGap === 0 ? 'text-ok' : 'text-bad'" />
+          <span>Le solde final du relevé correspond à ses opérations.</span>
+        </li>
+        <li class="flex items-start gap-2.5">
+          <app-icon [name]="b.gap === 0 ? 'check' : 'alert'" class="mt-0.5 flex-none" [class]="b.gap === 0 ? 'text-ok' : 'text-warn'" />
+          <span>
+            Écart entre le relevé et la comptabilité :
+            <strong [class]="b.gap === 0 ? 'text-ok' : 'text-warn'">{{ fmt(b.gap) }}</strong>
+          </span>
+        </li>
+        @if (store.progress().investigate > 0) {
+          <li class="flex items-start gap-2.5">
+            <app-icon name="info" class="mt-0.5 flex-none text-brand-700" />
+            <span>
+              {{ store.progress().investigate }} opération{{ store.progress().investigate > 1 ? 's resteront visibles' : ' restera visible' }}
+              au prochain rapprochement de ce compte.
+            </span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (store.error(); as message) {
+    <p class="rounded-lg border border-bad/30 bg-bad-bg px-4 py-3 text-sm font-semibold text-bad" role="alert">{{ message }}</p>
+  }
+
+  <section aria-labelledby="clo-confirm" class="rounded-xl border border-ok/40 bg-ok-bg px-5 py-5">
+    <h3 id="clo-confirm" class="mb-1 flex items-center gap-2 text-base font-semibold text-ok">
+      <app-icon name="check" /> Clôturer le relevé : confirmation
+    </h3>
+    <p class="text-sm text-ok">
+      Vous confirmez que les opérations de {{ store.label() }} ont été rapprochées. Cette action est définitive.
+    </p>
+    <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+      <button type="button" class="btn btn-quiet w-full bg-white sm:w-auto" (click)="cancelled.emit()">Annuler</button>
+      <button
+        type="button"
+        class="btn btn-success w-full sm:w-auto"
+        [disabled]="store.progress().remaining > 0"
+        (click)="confirmed.emit()"
+      >
+        <app-icon name="lock" /> Confirmer la clôture
+      </button>
+    </div>
+  </section>
+</div>
